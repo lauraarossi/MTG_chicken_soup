@@ -16,20 +16,13 @@
 - [ ] Deploy frontend to Railway
 - [ ] Set NEXT_PUBLIC_API_URL to backend Railway URL
 - [ ] Add a custom domain
-- [ ] Test end-to-end on Railway with a friend
+- [ ] Test end-to-end on Railway
 
 ## Data & ML
 - [ ] Run Scryfall + EDHREC data pipeline
 - [ ] Evaluate whether fine-tuning is worth it vs prompt engineering
 
-## Testing & CI
-- [ ] Backend test suite (pytest)
-- [ ] Frontend test suite (Jest + React Testing Library)
-- [ ] GitHub Actions workflow to run all tests on PR
-- [ ] Branch protection rule: require passing CI before merging to main
-
 ## Nice to Have
-- [ ] Deck import (paste MTGO / Moxfield format to create a saved deck)
 - [ ] Deck export (copy to clipboard in MTGO / Moxfield format)
 - [ ] Save deck from chat (extract decklist from assistant response)
 - [ ] Card image previews on hover
