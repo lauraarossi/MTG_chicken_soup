@@ -21,21 +21,21 @@ export default function DeckDetailPage() {
       .finally(() => setLoading(false));
   }, [params.id, router]);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500 dark:text-gray-400">Loading...</div>;
   if (!deck) return null;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{deck.name}</h1>
-        <p className="text-gray-500">Commander: {deck.commander}</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{deck.name}</h1>
+        <p className="text-gray-500 dark:text-gray-400">Commander: {deck.commander}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {deck.decklist && (
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <h2 className="font-semibold mb-3">Decklist</h2>
-            <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono overflow-auto max-h-96">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+            <h2 className="font-semibold mb-3 text-gray-900 dark:text-gray-100">Decklist</h2>
+            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono overflow-auto max-h-96">
               {deck.decklist}
             </pre>
           </div>
