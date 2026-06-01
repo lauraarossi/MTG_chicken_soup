@@ -14,7 +14,7 @@ dist/
 # Data & models (large files)
 data/raw/
 data/processed/
-models/
+/models/
 *.bin
 *.safetensors
 *.gguf
