@@ -68,13 +68,8 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         db.add(assistant_msg)
 
         await db.commit()
-
-        result = await db.execute(
-            select(Conversation)
-            .where(Conversation.id == conversation.id)
-            .options(selectinload(Conversation.messages))
-        )
-        return result.scalar_one()
+        await db.refresh(conversation, attribute_names=["messages"])
+        return conversation
     except Exception as e:
         logger.exception("Unhandled error in chat endpoint")
         raise HTTPException(status_code=500, detail=str(e))

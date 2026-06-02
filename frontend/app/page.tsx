@@ -14,7 +14,7 @@ export default function Home() {
           <div className="text-3xl mb-3">🏗️</div>
           <h2 className="font-semibold text-lg mb-1 text-gray-900 dark:text-slate-100">Build a Deck</h2>
           <p className="text-gray-500 dark:text-slate-400 text-sm">
-            Start from a commander and get card suggestions tailored to your strategy
+            Build for any format — Commander, Pioneer, Modern, Limited, and more
           </p>
         </Link>
 
