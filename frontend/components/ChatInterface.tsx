@@ -7,13 +7,23 @@ import type { Message } from "@/types";
 interface Props {
   initialMessage?: string;
   deckId?: number;
+  onSaveDeck?: (text: string) => Promise<void>;
 }
 
-export default function ChatInterface({ initialMessage, deckId }: Props) {
+function extractDecklist(text: string): string | null {
+  const lines = text.split("\n").filter((line) => {
+    const t = line.trim();
+    return /^\d+x?\s+\S/.test(t) || /^\/\//.test(t);
+  });
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
+export default function ChatInterface({ initialMessage, deckId, onSaveDeck }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [conversationId, setConversationId] = useState<number | undefined>();
+  const [savedMsgId, setSavedMsgId] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const sentInitial = useRef(false);
 
@@ -41,13 +51,18 @@ export default function ChatInterface({ initialMessage, deckId }: Props) {
     try {
       const convo = await api.chat.send(text, conversationId, deckId);
       setConversationId(convo.id);
-      // Replace optimistic message with server messages
       setMessages(convo.messages);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSaveDeck(msg: Message) {
+    if (!onSaveDeck) return;
+    await onSaveDeck(msg.content);
+    setSavedMsgId(msg.id);
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -69,7 +84,7 @@ export default function ChatInterface({ initialMessage, deckId }: Props) {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
           >
             <div
               className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
@@ -86,6 +101,14 @@ export default function ChatInterface({ initialMessage, deckId }: Props) {
                 </ReactMarkdown>
               )}
             </div>
+            {msg.role === "assistant" && onSaveDeck && extractDecklist(msg.content) && (
+              <button
+                onClick={() => handleSaveDeck(msg)}
+                className="mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                {savedMsgId === msg.id ? "Saved to deck ✓" : "Save as decklist"}
+              </button>
+            )}
           </div>
         ))}
 
