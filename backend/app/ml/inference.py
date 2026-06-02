@@ -6,16 +6,115 @@ from app.config import settings
 
 _anthropic_client: anthropic.AsyncAnthropic | None = None
 
-SYSTEM_PROMPT = (
+BASE_PROMPT = (
     "You are an expert Magic: The Gathering player with deep knowledge of all formats: "
     "Commander/EDH, Brawl, Standard, Pioneer, Modern, Legacy, Vintage, Pauper, Explorer, Historic, "
     "and limited formats (Draft and Sealed). "
-    "For constructed formats, you give detailed deck-building advice covering card choices, synergies, "
-    "mana curve, win conditions, and budget. "
-    "For limited formats, you advise on card evaluation, colour signals, archetype priorities, and "
-    "pick order rather than building a fixed 60-card list. "
-    "Always tailor your advice to the format the user specifies."
+    "Give specific, actionable advice. Never pad responses with generic theory when you can give "
+    "concrete card names, synergies, or strategies instead."
 )
+
+FORMAT_PROMPTS: dict[str, str] = {
+    "limited": (
+        "You are advising on a specific limited format (Draft or Sealed). "
+        "Your response MUST be specific to the set being discussed — do not give generic limited theory. "
+        "Cover: the set's key mechanics and how they shape gameplay, the exact archetype(s) the chosen "
+        "colours support in THIS set, the best commons and uncommons in those colours, what the archetype "
+        "is trying to do (aggro/tempo/midrange/control), key synergies to build around, and what to "
+        "avoid or deprioritise. "
+        "If the set is beyond your knowledge cutoff, say so clearly rather than inventing card names — "
+        "but still discuss the colour pair's tendencies and ask the user to share key mechanics."
+    ),
+    "commander": (
+        "You are advising on a Commander or Brawl deck. "
+        "Focus on the specific commander's abilities and how the 99 supports them. "
+        "Account for the multiplayer (typically 4-player) context: prioritise high-impact spells, "
+        "efficient card advantage, interaction that scales to multiple opponents, and clear win conditions. "
+        "Discuss colour identity constraints, the commander's power level, and budget tiers if relevant."
+    ),
+    "standard": (
+        "You are advising on a Standard deck. "
+        "Focus on the current legal card pool and discuss rotation risk for recently printed cards. "
+        "Cover the archetype's meta positioning, key synergies, mana base, and sideboard priorities."
+    ),
+    "pioneer": (
+        "You are advising on a Pioneer deck. "
+        "Pioneer has no rotation — leverage the deep card pool and established meta archetypes. "
+        "Discuss synergies, mana base options, and sideboard strategy against the major meta threats."
+    ),
+    "modern": (
+        "You are advising on a Modern deck. "
+        "Modern is a high-power format where efficiency is paramount. "
+        "Discuss the deck's speed relative to the meta, key combo lines or threat density, "
+        "critical interaction, and sideboard strategy for the major threats."
+    ),
+    "legacy": (
+        "You are advising on a Legacy deck. "
+        "Legacy includes Force of Will, dual lands, and a near-complete card pool. "
+        "Focus on the deck's positioning against blue permission and fast combo. "
+        "Mana efficiency and interaction density are critical."
+    ),
+    "vintage": (
+        "You are advising on a Vintage deck. "
+        "Vintage is the most powerful format — Power Nine and almost all cards are legal. "
+        "Focus on broken interactions, fast mana, and early-turn wins or disruption. "
+        "Reference the restriction list where relevant."
+    ),
+    "pauper": (
+        "You are advising on a Pauper deck. "
+        "Pauper is commons-only — restrict ALL card suggestions to cards printed at common rarity. "
+        "The format has well-established archetypes; discuss where the chosen strategy fits "
+        "and the key commons that define the current meta."
+    ),
+    "explorer": (
+        "You are advising on an Explorer deck (Pioneer-legal cards on MTG Arena). "
+        "Note any Pioneer staples not yet available on Arena and suggest Arena-legal alternatives."
+    ),
+    "historic": (
+        "You are advising on a Historic deck (MTG Arena format with expanded card pool). "
+        "The card pool includes Historic Anthologies, Remastered sets, and some non-Pioneer cards. "
+        "Focus on powerful synergies available in this unique card pool."
+    ),
+}
+
+
+def _detect_format(history: list[dict]) -> str:
+    first_msg = next(
+        (m["content"].lower() for m in history if m["role"] == "user"), ""
+    )
+    if any(w in first_msg for w in ["draft", "sealed", "limited"]):
+        return "limited"
+    if any(w in first_msg for w in ["commander", "edh", "brawl"]):
+        return "commander"
+    if "vintage" in first_msg:
+        return "vintage"
+    if "legacy" in first_msg:
+        return "legacy"
+    if "modern" in first_msg:
+        return "modern"
+    if "pioneer" in first_msg:
+        return "pioneer"
+    if "explorer" in first_msg:
+        return "explorer"
+    if "historic" in first_msg:
+        return "historic"
+    if "pauper" in first_msg:
+        return "pauper"
+    if "standard" in first_msg:
+        return "standard"
+    return "general"
+
+
+def build_system_prompt(history: list[dict], context: str | None = None) -> str:
+    fmt = _detect_format(history)
+    addendum = FORMAT_PROMPTS.get(fmt, "")
+    parts = [BASE_PROMPT]
+    if addendum:
+        parts.append(addendum)
+    if context:
+        parts.append(context)
+    return "\n\n".join(parts)
+
 
 _DEFAULT_ORDER = ["ollama", "free", "claude"]
 
@@ -67,9 +166,7 @@ async def _respond_openai_compat(
 async def get_response(
     message: str, history: list[dict], context: str | None = None
 ) -> str:
-    system = SYSTEM_PROMPT
-    if context:
-        system = f"{SYSTEM_PROMPT}\n\n{context}"
+    system = build_system_prompt(history, context)
 
     preferred = settings.inference_provider.lower() if settings.inference_provider else ""
     if preferred in _DEFAULT_ORDER:

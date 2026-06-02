@@ -15,11 +15,13 @@ logger = logging.getLogger(__name__)
 EXTRACT_PROMPT = (
     "Based on our conversation, extract the complete deck list that was recommended. "
     "Format it as plain text, one card per line using the format: '1 Card Name'. "
-    "Group cards under section headers prefixed with // using the card's primary type. "
-    "Use these section headers (only include sections that have cards): "
-    "// Commander, // Planeswalker, // Battle, // Creature, // Instant, // Sorcery, "
-    "// Artifact, // Enchantment, // Land. "
-    "Do not use a 'Tribal' section — tribal cards should appear under their other type. "
+    "Group cards under section headers prefixed with //. "
+    "For Commander/Brawl format decks, list the commander(s) first under '// Commander' — include both cards if it is a partner deck (this is a deck zone designation, not a card type). "
+    "Then group the remaining cards by their primary card type using only these headers "
+    "(include a section only if it has cards): "
+    "// Creature, // Planeswalker, // Battle, // Instant, // Sorcery, // Artifact, // Enchantment, // Land, // Other. "
+    "Put Conspiracy, Dungeon, Phenomenon, Plane, Scheme, Vanguard, and any other unusual types under // Other. "
+    "Do not create a Tribal section — tribal cards go under their other type. "
     "Return ONLY the formatted decklist — no introduction, no explanation, no closing remarks. "
     "If no complete deck was discussed, return an empty string."
 )
