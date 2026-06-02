@@ -24,8 +24,8 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCr
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [conversationId, setConversationId] = useState<number | undefined>();
   const [savedMsgId, setSavedMsgId] = useState<number | null>(null);
+  const conversationId = useRef<number | undefined>(undefined);
   const bottomRef = useRef<HTMLDivElement>(null);
   const sentInitial = useRef(false);
 
@@ -51,8 +51,8 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCr
     setLoading(true);
 
     try {
-      const convo = await api.chat.send(text, conversationId, deckId);
-      setConversationId(convo.id);
+      const convo = await api.chat.send(text, conversationId.current, deckId);
+      conversationId.current = convo.id;
       setMessages(convo.messages);
     } catch (e) {
       console.error(e);

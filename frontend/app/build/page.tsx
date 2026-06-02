@@ -194,10 +194,36 @@ export default function BuildPage() {
     ? commander.trim().length > 0
     : true;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loadingColors, setLoadingColors] = useState(false);
+
+  async function fetchCommanderColors(name: string): Promise<string[]> {
+    try {
+      const res = await fetch(
+        `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`,
+      );
+      if (!res.ok) return [];
+      const card = await res.json();
+      const identity: string[] = card.color_identity ?? [];
+      const map: Record<string, string> = { W: "White", U: "Blue", B: "Black", R: "Red", G: "Green" };
+      return identity.length === 0
+        ? ["Colorless"]
+        : identity.map((c: string) => map[c]).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    setInitialMessage(buildInitialMessage(format, commander, archetype, colors, themes, set));
+    let resolvedColors = colors;
+    if (format.hasCommander && commander.trim()) {
+      setLoadingColors(true);
+      resolvedColors = await fetchCommanderColors(commander.trim());
+      setColors(resolvedColors);
+      setLoadingColors(false);
+    }
+    setInitialMessage(buildInitialMessage(format, commander, archetype, resolvedColors, themes, set));
   };
 
   function openSaveDialog(text: string) {
@@ -322,10 +348,10 @@ export default function BuildPage() {
 
           <button
             type="submit"
-            disabled={!isValid}
+            disabled={!isValid || loadingColors}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {format.isLimited ? "Get Advice" : "Start Building"}
+            {loadingColors ? "Looking up commander…" : format.isLimited ? "Get Advice" : "Start Building"}
           </button>
         </form>
       ) : (
