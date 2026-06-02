@@ -18,6 +18,14 @@ export default function DecksPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  function handleDelete(id: number) {
+    setDecks((prev) => prev.filter((d) => d.id !== id));
+  }
+
+  function handleDuplicate(deck: Deck) {
+    setDecks((prev) => [deck, ...prev]);
+  }
+
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500 dark:text-slate-400">Loading...</div>;
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Error: {error}</div>;
 
@@ -43,7 +51,12 @@ export default function DecksPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {decks.map((deck) => (
-            <DeckCard key={deck.id} deck={deck} />
+            <DeckCard
+              key={deck.id}
+              deck={deck}
+              onDelete={handleDelete}
+              onDuplicate={handleDuplicate}
+            />
           ))}
         </div>
       )}
