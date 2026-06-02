@@ -37,7 +37,7 @@ export default function DeckDetailPage() {
     if (!deck) return;
     setSaving(true);
     try {
-      const updated = await api.decks.update(deck.id, { decklist: draftDecklist || null });
+      const updated = await api.decks.update(deck.id, { decklist: draftDecklist || undefined });
       setDeck(updated);
       setEditing(false);
     } finally {
@@ -125,7 +125,7 @@ export default function DeckDetailPage() {
               </div>
             </div>
           ) : deck.decklist ? (
-            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono overflow-auto max-h-96">
+            <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono overflow-auto max-h-48 sm:max-h-96">
               {deck.decklist}
             </pre>
           ) : (

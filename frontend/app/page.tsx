@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Home() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-12">
-      <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">MTG Chicken Soup</h1>
+      <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">MTG Chicken Soup</h1>
       <p className="text-gray-500 dark:text-gray-400 mb-10 text-lg">Your AI-powered Commander deck assistant</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

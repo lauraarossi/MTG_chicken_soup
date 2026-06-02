@@ -73,7 +73,7 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck }: Pr
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col h-[600px]">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col h-[420px] sm:h-[600px]">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading && (
           <div className="text-center text-gray-400 dark:text-gray-500 py-8 text-sm">
