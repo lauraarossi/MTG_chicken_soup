@@ -8,6 +8,7 @@ interface Props {
   initialMessage?: string;
   deckId?: number;
   onSaveDeck?: (text: string) => Promise<void>;
+  accentColor?: string;
 }
 
 function extractDecklist(text: string): string | null {
@@ -18,7 +19,7 @@ function extractDecklist(text: string): string | null {
   return lines.length > 0 ? lines.join("\n") : null;
 }
 
-export default function ChatInterface({ initialMessage, deckId, onSaveDeck }: Props) {
+export default function ChatInterface({ initialMessage, deckId, onSaveDeck, accentColor = "#3b82f6" }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -89,9 +90,10 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck }: Pr
             <div
               className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
                 msg.role === "user"
-                  ? "bg-blue-600 text-white"
+                  ? "text-white"
                   : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               }`}
+              style={msg.role === "user" ? { backgroundColor: accentColor } : {}}
             >
               {msg.role === "user" ? (
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -135,7 +137,8 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck }: Pr
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ backgroundColor: accentColor }}
         >
           Send
         </button>
