@@ -7,13 +7,13 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "MTG Chicken Soup",
-  description: "AI-powered MTG Commander deck builder and analyzer",
+  description: "AI-powered Magic: The Gathering assistant",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900 min-h-screen`}>
+      <body className={`${inter.className} bg-gray-50 dark:bg-slate-950 min-h-screen`}>
         <Navigation />
         {children}
       </body>

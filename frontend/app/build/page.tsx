@@ -11,7 +11,7 @@ const COLOR_SOLID: Record<string, string> = Object.fromEntries(MTG_COLOR_META.ma
 const MTG_COLORS = [
   { value: "White",     symbol: "W", bg: "bg-yellow-50  dark:bg-yellow-900/30", border: "border-yellow-300 dark:border-yellow-600", text: "text-yellow-800 dark:text-yellow-200", tip: "Order, law, protection. Removal, lifegain, tokens, wraths." },
   { value: "Blue",      symbol: "U", bg: "bg-blue-50    dark:bg-blue-900/30",   border: "border-blue-300   dark:border-blue-600",   text: "text-blue-800   dark:text-blue-200",   tip: "Knowledge, control, perfection. Counterspells, card draw, flying." },
-  { value: "Black",     symbol: "B", bg: "bg-gray-100   dark:bg-gray-700",      border: "border-gray-400   dark:border-gray-500",   text: "text-gray-800   dark:text-gray-200",   tip: "Power, ambition, death. Tutors, removal, reanimation, sacrifice." },
+  { value: "Black",     symbol: "B", bg: "bg-gray-100   dark:bg-slate-800",      border: "border-gray-400   dark:border-slate-500",   text: "text-gray-800   dark:text-slate-200",   tip: "Power, ambition, death. Tutors, removal, reanimation, sacrifice." },
   { value: "Red",       symbol: "R", bg: "bg-red-50     dark:bg-red-900/30",    border: "border-red-300    dark:border-red-600",    text: "text-red-800    dark:text-red-200",    tip: "Chaos, freedom, emotion. Aggro, burn, haste, impulse draw." },
   { value: "Green",     symbol: "G", bg: "bg-green-50   dark:bg-green-900/30",  border: "border-green-300  dark:border-green-600",  text: "text-green-800  dark:text-green-200",  tip: "Nature, growth, strength. Ramp, big creatures, trample." },
   { value: "Colorless", symbol: "C", bg: "bg-slate-100  dark:bg-slate-700",     border: "border-slate-300  dark:border-slate-500",  text: "text-slate-700  dark:text-slate-300",  tip: "Artifacts and Eldrazi. No colored mana requirements." },
@@ -28,7 +28,7 @@ function Tooltip({ text }: { text: string }) {
         onFocus={() => setVisible(true)}
         onBlur={() => setVisible(false)}
         onClick={() => setVisible((v) => !v)}
-        className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-gray-400 text-[10px] flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none"
+        className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-600 text-gray-500 dark:text-slate-400 text-[10px] flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-500 focus:outline-none"
         aria-label="More info"
       >
         i
@@ -64,7 +64,7 @@ function ColorCheckboxes({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
         Colours <span className="text-gray-400 font-normal">(optional — none = no preference)</span>
       </label>
       <div className="flex flex-wrap gap-2">
@@ -76,7 +76,7 @@ function ColorCheckboxes({
               type="button"
               onClick={() => toggle(value)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm font-medium transition-all ${bg} ${text} ${
-                checked ? `${border} ring-2 ring-offset-1 ring-blue-500` : "border-transparent opacity-60 hover:opacity-100"
+                checked ? `${border} ring-2 ring-offset-1 ring-indigo-500` : "border-transparent opacity-60 hover:opacity-100"
               }`}
             >
               <span className="font-bold">{symbol}</span>
@@ -224,23 +224,23 @@ export default function BuildPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6">
         {format.isLimited ? "Limited Advice" : "Build a Deck"}
       </h1>
 
       {!initialMessage ? (
         <form
           onSubmit={handleSubmit}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 space-y-4"
+          className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl p-6 space-y-4"
         >
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
               Format
             </label>
             <select
               value={format.value}
               onChange={(e) => handleFormatChange(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <optgroup label="Constructed">
                 {FORMATS.filter((f) => !f.isLimited).map((f) => (
@@ -257,7 +257,7 @@ export default function BuildPage() {
 
           {format.hasCommander && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Commander
               </label>
               <input
@@ -265,7 +265,7 @@ export default function BuildPage() {
                 value={commander}
                 onChange={(e) => setCommander(e.target.value)}
                 placeholder="e.g. Atraxa, Praetors' Voice"
-                className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
           )}
@@ -274,7 +274,7 @@ export default function BuildPage() {
             <>
               <ColorCheckboxes colors={colors} onChange={setColors} />
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Archetype <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <input
@@ -282,11 +282,11 @@ export default function BuildPage() {
                   value={archetype}
                   onChange={(e) => setArchetype(e.target.value)}
                   placeholder="e.g. burn, control, midrange, combo"
-                  className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Cards, themes, or tribes to build around <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <input
@@ -294,7 +294,7 @@ export default function BuildPage() {
                   value={themes}
                   onChange={(e) => setThemes(e.target.value)}
                   placeholder="e.g. Goblin tribal, Teferi, graveyard recursion"
-                  className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
             </>
@@ -303,7 +303,7 @@ export default function BuildPage() {
           {format.isLimited && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Set <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
                 <input
@@ -311,7 +311,7 @@ export default function BuildPage() {
                   value={set}
                   onChange={(e) => setSet(e.target.value)}
                   placeholder="e.g. Duskmourn, Bloomburrow"
-                  className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
               <ColorCheckboxes colors={colors} onChange={setColors} />
@@ -321,7 +321,7 @@ export default function BuildPage() {
           <button
             type="submit"
             disabled={!isValid || loadingColors}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loadingColors ? "Looking up commander…" : format.isLimited ? "Get Advice" : "Start Building"}
           </button>
@@ -350,29 +350,29 @@ export default function BuildPage() {
 
       {saveDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Save deck</h2>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="font-semibold text-gray-900 dark:text-slate-100 mb-4">Save deck</h2>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
               Deck name
             </label>
             <input
               type="text"
               value={saveDialog.deckName}
               onChange={(e) => setSaveDialog({ ...saveDialog, deckName: e.target.value })}
-              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               autoFocus
             />
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setSaveDialog(null)}
-                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-gray-700"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmSave}
                 disabled={saving || !saveDialog.deckName.trim()}
-                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save"}
               </button>

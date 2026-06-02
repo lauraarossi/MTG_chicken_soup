@@ -18,16 +18,16 @@ export default function DecksPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500 dark:text-gray-400">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500 dark:text-slate-400">Loading...</div>;
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Error: {error}</div>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Decks</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">My Decks</h1>
         <Link
           href="/build"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
         >
           + New Deck
         </Link>
@@ -36,7 +36,7 @@ export default function DecksPage() {
       {decks.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <p className="text-lg mb-2">No decks yet</p>
-          <Link href="/build" className="text-blue-600 hover:underline">
+          <Link href="/build" className="text-indigo-600 hover:underline">
             Build your first deck
           </Link>
         </div>

@@ -37,12 +37,12 @@ export default function DeckCard({ deck }: { deck: Deck }) {
 
   return (
     <div
-      className="bg-white dark:bg-gray-800 rounded-xl p-5 hover:shadow-md transition-all border border-gray-200 dark:border-gray-700"
+      className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm hover:shadow-md dark:shadow-slate-950/50 dark:hover:shadow-slate-950/80 transition-all border border-gray-200 dark:border-slate-700"
       style={borderStyle}
     >
       <div className="flex justify-between items-start mb-2">
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 leading-snug">{deck.name}</h3>
-        <span className="ml-2 shrink-0 text-xs text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full capitalize">
+        <h3 className="font-semibold text-gray-900 dark:text-slate-100 leading-snug">{deck.name}</h3>
+        <span className="ml-2 shrink-0 text-xs text-gray-400 dark:text-slate-500 bg-gray-100 dark:bg-slate-800 px-2 py-1 rounded-full capitalize">
           {deck.format}
         </span>
       </div>
@@ -50,22 +50,22 @@ export default function DeckCard({ deck }: { deck: Deck }) {
       <div className="flex items-center gap-2 mb-3">
         <ColorPips colors={colors} />
         {isCommander && deck.commander && deck.commander !== "Unknown" && (
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-gray-500 dark:text-slate-400">
             {deck.commander}
           </p>
         )}
         {!isCommander && deck.description && (
-          <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-1">
+          <p className="text-sm text-gray-500 dark:text-slate-400 line-clamp-1">
             {deck.description}
           </p>
         )}
       </div>
 
       <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-400 dark:text-gray-500">
+        <span className="text-xs text-gray-400 dark:text-slate-500">
           {new Date(deck.created_at).toLocaleDateString()}
         </span>
-        <Link href={`/decks/${deck.id}`} className="text-sm text-blue-600 dark:text-blue-400 hover:underline">
+        <Link href={`/decks/${deck.id}`} className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline">
           View →
         </Link>
       </div>
