@@ -149,7 +149,7 @@ export default function DeckDetailPage() {
                   const meta = MTG_COLOR_META.find((m) => m.value === c);
                   if (!meta) return null;
                   return (
-                    <span key={c} className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${meta.pip}`} title={c}>
+                    <span key={c} className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: meta.solid }} title={c}>
                       {meta.symbol}
                     </span>
                   );

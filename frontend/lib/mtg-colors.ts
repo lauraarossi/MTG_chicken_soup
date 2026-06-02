@@ -1,12 +1,12 @@
 import type { CSSProperties } from "react";
 
 export const MTG_COLOR_META = [
-  { value: "White",     symbol: "W", solid: "#c8a951", glow: "rgba(248,231,120,0.22)", pip: "bg-yellow-500 text-white" },
-  { value: "Blue",      symbol: "U", solid: "#3b82f6", glow: "rgba(59,130,246,0.22)",  pip: "bg-blue-500  text-white" },
-  { value: "Black",     symbol: "B", solid: "#8b5cf6", glow: "rgba(139,92,246,0.22)",  pip: "bg-violet-500 text-white" },
-  { value: "Red",       symbol: "R", solid: "#ef4444", glow: "rgba(239,68,68,0.22)",   pip: "bg-red-500   text-white" },
-  { value: "Green",     symbol: "G", solid: "#22c55e", glow: "rgba(34,197,94,0.22)",   pip: "bg-green-500 text-white" },
-  { value: "Colorless", symbol: "C", solid: "#94a3b8", glow: "rgba(148,163,184,0.22)", pip: "bg-slate-400 text-white" },
+  { value: "White",     symbol: "W", solid: "#c8a951", glow: "rgba(248,231,120,0.22)" },
+  { value: "Blue",      symbol: "U", solid: "#3b82f6", glow: "rgba(59,130,246,0.22)"  },
+  { value: "Black",     symbol: "B", solid: "#8b5cf6", glow: "rgba(139,92,246,0.22)"  },
+  { value: "Red",       symbol: "R", solid: "#ef4444", glow: "rgba(239,68,68,0.22)"   },
+  { value: "Green",     symbol: "G", solid: "#22c55e", glow: "rgba(34,197,94,0.22)"   },
+  { value: "Colorless", symbol: "C", solid: "#94a3b8", glow: "rgba(148,163,184,0.22)" },
 ] as const;
 
 export type ColorValue = (typeof MTG_COLOR_META)[number]["value"];

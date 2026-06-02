@@ -17,7 +17,8 @@ function ColorPips({ colors }: { colors: ReturnType<typeof parseColors> }) {
         return (
           <span
             key={c}
-            className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${meta.pip}`}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold text-white"
+            style={{ backgroundColor: meta.solid }}
             title={c}
           >
             {meta.symbol}
