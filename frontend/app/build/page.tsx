@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ChatInterface from "@/components/ChatInterface";
+import { api } from "@/lib/api";
 
 const COLOR_GLOW: Record<string, string> = {
   White:     "rgba(248, 231, 120, 0.22)",
@@ -156,7 +158,16 @@ function buildInitialMessage(
   return `I want to build a ${format.label} deck${detailClause}. What are the key cards and strategy I should consider?`;
 }
 
+function extractDecklist(text: string): string | null {
+  const lines = text.split("\n").filter((line) => {
+    const t = line.trim();
+    return /^\d+x?\s+\S/.test(t) || /^\/\//.test(t);
+  });
+  return lines.length > 0 ? lines.join("\n") : null;
+}
+
 export default function BuildPage() {
+  const router = useRouter();
   const [format, setFormat] = useState(FORMATS[0]);
   const [commander, setCommander] = useState("");
   const [archetype, setArchetype] = useState("");
@@ -164,6 +175,8 @@ export default function BuildPage() {
   const [themes, setThemes] = useState("");
   const [set, setSet] = useState("");
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
+  const [saveDialog, setSaveDialog] = useState<{ text: string; deckName: string } | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const handleFormatChange = (value: string) => {
     const f = FORMATS.find((f) => f.value === value) ?? FORMATS[0];
@@ -186,6 +199,30 @@ export default function BuildPage() {
     if (!isValid) return;
     setInitialMessage(buildInitialMessage(format, commander, archetype, colors, themes, set));
   };
+
+  function openSaveDialog(text: string) {
+    const defaultName = commander.trim()
+      ? `${commander.trim()} Deck`
+      : `${format.label} Deck`;
+    setSaveDialog({ text, deckName: defaultName });
+  }
+
+  async function confirmSave() {
+    if (!saveDialog) return;
+    setSaving(true);
+    try {
+      const deck = await api.decks.create({
+        name: saveDialog.deckName,
+        commander: commander.trim() || "Unknown",
+        format: format.value,
+        decklist: extractDecklist(saveDialog.text) ?? saveDialog.text,
+      });
+      router.push(`/decks/${deck.id}`);
+    } finally {
+      setSaving(false);
+      setSaveDialog(null);
+    }
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -304,7 +341,44 @@ export default function BuildPage() {
             className="rounded-xl overflow-hidden"
             style={getGradientStyle(colors)}
           >
-            <ChatInterface initialMessage={initialMessage} accentColor={getAccentColor(colors)} />
+            <ChatInterface
+              initialMessage={initialMessage}
+              accentColor={getAccentColor(colors)}
+              onCreateDeck={openSaveDialog}
+            />
+          </div>
+        </div>
+      )}
+
+      {saveDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-sm shadow-xl">
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">Save deck</h2>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Deck name
+            </label>
+            <input
+              type="text"
+              value={saveDialog.deckName}
+              onChange={(e) => setSaveDialog({ ...saveDialog, deckName: e.target.value })}
+              className="w-full border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg px-4 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setSaveDialog(null)}
+                className="px-4 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSave}
+                disabled={saving || !saveDialog.deckName.trim()}
+                className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save"}
+              </button>
+            </div>
           </div>
         </div>
       )}

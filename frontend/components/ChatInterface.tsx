@@ -8,6 +8,7 @@ interface Props {
   initialMessage?: string;
   deckId?: number;
   onSaveDeck?: (text: string) => Promise<void>;
+  onCreateDeck?: (text: string) => void;
   accentColor?: string;
 }
 
@@ -19,7 +20,7 @@ function extractDecklist(text: string): string | null {
   return lines.length > 0 ? lines.join("\n") : null;
 }
 
-export default function ChatInterface({ initialMessage, deckId, onSaveDeck, accentColor = "#3b82f6" }: Props) {
+export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCreateDeck, accentColor = "#3b82f6" }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -103,13 +104,25 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, acce
                 </ReactMarkdown>
               )}
             </div>
-            {msg.role === "assistant" && onSaveDeck && extractDecklist(msg.content) && (
-              <button
-                onClick={() => handleSaveDeck(msg)}
-                className="mt-1 text-xs text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                {savedMsgId === msg.id ? "Saved to deck ✓" : "Save as decklist"}
-              </button>
+            {msg.role === "assistant" && extractDecklist(msg.content) && (
+              <div className="mt-1 flex gap-3">
+                {onSaveDeck && (
+                  <button
+                    onClick={() => handleSaveDeck(msg)}
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {savedMsgId === msg.id ? "Saved to deck ✓" : "Save as decklist"}
+                  </button>
+                )}
+                {onCreateDeck && (
+                  <button
+                    onClick={() => onCreateDeck(msg.content)}
+                    className="text-xs text-green-600 dark:text-green-400 hover:underline"
+                  >
+                    Save as new deck
+                  </button>
+                )}
+              </div>
             )}
           </div>
         ))}
