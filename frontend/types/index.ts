@@ -5,16 +5,18 @@ export interface Deck {
   format: string;
   description: string | null;
   decklist: string | null;
+  colors: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface DeckCreate {
   name: string;
-  commander: string;
+  commander?: string;
   format?: string;
   description?: string;
   decklist?: string;
+  colors?: string;
 }
 
 export interface Message {

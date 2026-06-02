@@ -3,48 +3,16 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ChatInterface from "@/components/ChatInterface";
 import { api } from "@/lib/api";
+import { MTG_COLOR_META, getAccentColor, getGlowStyle } from "@/lib/mtg-colors";
+import type { ColorValue } from "@/lib/mtg-colors";
 
-const COLOR_GLOW: Record<string, string> = {
-  White:     "rgba(248, 231, 120, 0.22)",
-  Blue:      "rgba(59,  130, 246, 0.22)",
-  Black:     "rgba(139,  92, 246, 0.22)",
-  Red:       "rgba(239,  68,  68, 0.22)",
-  Green:     "rgba(34,  197,  94, 0.22)",
-  Colorless: "rgba(148, 163, 184, 0.22)",
-};
+const COLOR_SOLID: Record<string, string> = Object.fromEntries(MTG_COLOR_META.map((m) => [m.value, m.solid]));
 
-const COLOR_SOLID: Record<string, string> = {
-  White:     "#c8a951",
-  Blue:      "#3b82f6",
-  Black:     "#8b5cf6",
-  Red:       "#ef4444",
-  Green:     "#22c55e",
-  Colorless: "#94a3b8",
-};
-
-function getGradientStyle(colors: string[]): React.CSSProperties {
-  if (colors.length === 0) return {};
-  const stops = colors.map((c) => COLOR_GLOW[c]).filter(Boolean);
-  if (stops.length === 1) {
-    return { background: `radial-gradient(ellipse 90% 60% at 50% -10%, ${stops[0]}, transparent 70%)` };
-  }
-  const gradientStops = stops.map((s, i) => `${s} ${Math.round((i / (stops.length - 1)) * 100)}%`).join(", ");
-  return { background: `linear-gradient(135deg, ${gradientStops})` };
-}
-
-function getAccentColor(colors: string[]): string {
-  if (colors.length === 0) return "#3b82f6"; // default blue
-  return COLOR_SOLID[colors[0]] ?? "#3b82f6";
-}
-
-const MTG_COLORS = [
-  { value: "White",     symbol: "W", bg: "bg-yellow-50  dark:bg-yellow-900/30", border: "border-yellow-300 dark:border-yellow-600", text: "text-yellow-800 dark:text-yellow-200", tip: "Order, law, protection. Removal, lifegain, tokens, wraths." },
-  { value: "Blue",      symbol: "U", bg: "bg-blue-50    dark:bg-blue-900/30",   border: "border-blue-300   dark:border-blue-600",   text: "text-blue-800   dark:text-blue-200",   tip: "Knowledge, control, perfection. Counterspells, card draw, flying." },
-  { value: "Black",     symbol: "B", bg: "bg-gray-100   dark:bg-gray-700",      border: "border-gray-400   dark:border-gray-500",   text: "text-gray-800   dark:text-gray-200",   tip: "Power, ambition, death. Tutors, removal, reanimation, sacrifice." },
-  { value: "Red",       symbol: "R", bg: "bg-red-50     dark:bg-red-900/30",    border: "border-red-300    dark:border-red-600",    text: "text-red-800    dark:text-red-200",    tip: "Chaos, freedom, emotion. Aggro, burn, haste, impulse draw." },
-  { value: "Green",     symbol: "G", bg: "bg-green-50   dark:bg-green-900/30",  border: "border-green-300  dark:border-green-600",  text: "text-green-800  dark:text-green-200",  tip: "Nature, growth, strength. Ramp, big creatures, trample." },
-  { value: "Colorless", symbol: "C", bg: "bg-slate-100  dark:bg-slate-700",     border: "border-slate-300  dark:border-slate-500",  text: "text-slate-700  dark:text-slate-300",  tip: "Artifacts and Eldrazi. No colored mana requirements." },
-] as const;
+const MTG_COLORS = MTG_COLOR_META.map((m) => ({
+  value: m.value,
+  symbol: m.symbol,
+  tip: m.pip, // reuse pip classes for the checkbox buttons too
+}));
 
 function Tooltip({ text }: { text: string }) {
   const [visible, setVisible] = useState(false);
@@ -239,9 +207,10 @@ export default function BuildPage() {
     try {
       const deck = await api.decks.create({
         name: saveDialog.deckName,
-        commander: commander.trim() || "Unknown",
+        commander: commander.trim() || undefined,
         format: format.value,
         decklist: extractDecklist(saveDialog.text) ?? saveDialog.text,
+        colors: colors.length > 0 ? colors.join(",") : undefined,
       });
       router.push(`/decks/${deck.id}`);
     } finally {
