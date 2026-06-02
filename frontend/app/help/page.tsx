@@ -34,7 +34,7 @@ export default function HelpPage() {
           Rules, mechanics, terminology, interactions — ask anything.
         </p>
       </div>
-      <ChatInterface systemContext={systemContext} />
+      <ChatInterface systemContext={systemContext} placeholder="Ask or chat about anything MTG..." />
     </div>
   );
 }

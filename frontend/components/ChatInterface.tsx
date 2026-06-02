@@ -11,6 +11,7 @@ interface Props {
   onSaveDeck?: (text: string) => Promise<void>;
   onCreateDeck?: (text: string) => void;
   accentColor?: string;
+  placeholder?: string;
 }
 
 function extractDecklist(text: string): string | null {
@@ -21,7 +22,7 @@ function extractDecklist(text: string): string | null {
   return lines.length > 0 ? lines.join("\n") : null;
 }
 
-export default function ChatInterface({ initialMessage, deckId, systemContext, onSaveDeck, onCreateDeck, accentColor = "#3b82f6" }: Props) {
+export default function ChatInterface({ initialMessage, deckId, systemContext, onSaveDeck, onCreateDeck, accentColor = "#3b82f6", placeholder = "Ask about your deck..." }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,7 +108,7 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading && (
           <div className="text-center text-gray-400 dark:text-slate-500 py-8 text-sm">
-            Ask anything about your deck...
+            {placeholder}
           </div>
         )}
 
@@ -171,7 +172,7 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about your deck..."
+          placeholder={placeholder}
           disabled={loading}
           className="flex-1 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-50 dark:disabled:bg-gray-800"
         />
