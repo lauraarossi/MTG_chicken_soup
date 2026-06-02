@@ -5,12 +5,11 @@
 
 ## Frontend
 - [ ] Streaming chat responses (show tokens as they arrive instead of waiting for full response)
-- [ ] Fix LLM truncation / running out of tokens mid-response
 
 ## Backend
 - [ ] RAG: embed cards and test retrieval quality (requires Ollama + nomic-embed-text)
 - [ ] Tune system prompt for better MTG advice quality
-- [ ] INFERENCE_PROVIDER env var to select preferred model (config added, inference.py update pending)
+- [x] INFERENCE_PROVIDER env var to select preferred model
 
 ## Deployment
 - [x] Deploy backend to Railway
@@ -22,14 +21,12 @@
 ## Testing & CI
 - [ ] Backend test suite (pytest)
 - [ ] Frontend test suite (Jest + React Testing Library)
-- [ ] GitHub Actions CI workflow for PRs
-- [ ] Branch protection rule requiring passing CI
 
 ## Data & ML
 - [ ] Connect to friend's Scryfall DB (has oracle text, image URIs, types, mana cost, etc.) — need connection string + schema
 - [ ] Generate embeddings from friend's card data into our card_embeddings table (one-time + periodic sync)
 - [ ] 7lands integration for limited format win-rate and pick-order data
-- [ ] Evaluate whether fine-tuning is worth it vs prompt engineering
+
 
 ## Nice to Have
 - [x] Deck import (paste decklist on deck detail page)

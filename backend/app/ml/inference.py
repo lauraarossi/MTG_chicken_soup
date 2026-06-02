@@ -1,4 +1,4 @@
-"""LLM inference — Claude API (production) or Ollama (local dev)."""
+"""LLM inference — supports Claude API, any OpenAI-compatible API, and Ollama."""
 from __future__ import annotations
 import anthropic
 import httpx
@@ -17,6 +17,8 @@ SYSTEM_PROMPT = (
     "Always tailor your advice to the format the user specifies."
 )
 
+_DEFAULT_ORDER = ["ollama", "free", "claude"]
+
 
 def _get_anthropic_client() -> anthropic.AsyncAnthropic:
     global _anthropic_client
@@ -27,14 +29,12 @@ def _get_anthropic_client() -> anthropic.AsyncAnthropic:
 
 async def _respond_claude(system: str, history: list[dict]) -> str:
     client = _get_anthropic_client()
-    async with client.messages.stream(
+    response = await client.messages.create(
         model=settings.model_name,
-        max_tokens=2048,
-        thinking={"type": "adaptive"},
+        max_tokens=4096,
         system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         messages=history,
-    ) as stream:
-        response = await stream.get_final_message()
+    )
     return next(
         (b.text for b in response.content if b.type == "text"),
         "I couldn't generate a response. Please try again.",
@@ -71,34 +71,41 @@ async def get_response(
     if context:
         system = f"{SYSTEM_PROMPT}\n\n{context}"
 
-    if settings.ollama_model:
-        try:
-            return await _respond_openai_compat(
-                settings.ollama_base_url, "", settings.ollama_model, system, history,
-                chat_path="/v1/chat/completions",
-            )
-        except Exception as e:
-            return f"Ollama error ({settings.ollama_base_url}): {e}"
+    preferred = settings.inference_provider.lower() if settings.inference_provider else ""
+    if preferred in _DEFAULT_ORDER:
+        order = [preferred] + [p for p in _DEFAULT_ORDER if p != preferred]
+    else:
+        order = _DEFAULT_ORDER
 
-    if settings.free_model and settings.free_api_base_url:
-        try:
-            return await _respond_openai_compat(
-                settings.free_api_base_url, settings.free_api_key, settings.free_model, system, history,
-                chat_path="/chat/completions",
-            )
-        except Exception as e:
-            return f"Free API error ({settings.free_api_base_url}): {e}"
+    for provider in order:
+        if provider == "ollama" and settings.ollama_model:
+            try:
+                return await _respond_openai_compat(
+                    settings.ollama_base_url, "", settings.ollama_model, system, history,
+                    chat_path="/v1/chat/completions",
+                )
+            except Exception as e:
+                return f"Ollama error ({settings.ollama_base_url}): {e}"
 
-    if not settings.anthropic_api_key:
-        return (
-            "No LLM configured. Set ANTHROPIC_API_KEY for Claude, "
-            "FREE_MODEL + FREE_API_BASE_URL for a free provider (e.g. GitHub Models), "
-            "or OLLAMA_MODEL for local inference."
-        )
+        elif provider == "free" and settings.free_model and settings.free_api_base_url:
+            try:
+                return await _respond_openai_compat(
+                    settings.free_api_base_url, settings.free_api_key, settings.free_model, system, history,
+                    chat_path="/chat/completions",
+                )
+            except Exception as e:
+                return f"Free API error ({settings.free_api_base_url}): {e}"
 
-    try:
-        return await _respond_claude(system, history)
-    except anthropic.AuthenticationError:
-        return "Invalid ANTHROPIC_API_KEY. Check your .env file."
-    except Exception as e:
-        return f"Error calling Claude API: {e}"
+        elif provider == "claude" and settings.anthropic_api_key:
+            try:
+                return await _respond_claude(system, history)
+            except anthropic.AuthenticationError:
+                return "Invalid ANTHROPIC_API_KEY. Check your environment variables."
+            except Exception as e:
+                return f"Error calling Claude API: {e}"
+
+    return (
+        "No LLM configured. Set ANTHROPIC_API_KEY for Claude, "
+        "FREE_MODEL + FREE_API_BASE_URL for a free provider, "
+        "or OLLAMA_MODEL for local inference."
+    )
