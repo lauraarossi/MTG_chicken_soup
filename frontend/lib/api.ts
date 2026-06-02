@@ -1,9 +1,7 @@
 import type { Deck, DeckCreate, Conversation } from "@/types";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}/api${path}`, {
+  const res = await fetch(`/api${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
