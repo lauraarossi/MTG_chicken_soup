@@ -7,6 +7,9 @@ RUN npm install
 
 COPY . .
 
+ARG BACKEND_URL
+ENV BACKEND_URL=$BACKEND_URL
+
 EXPOSE 3000
 
 RUN npm run build
