@@ -13,6 +13,7 @@ class Deck(Base):
     format: Mapped[str] = mapped_column(String(50), default="commander")
     description: Mapped[str | None] = mapped_column(Text)
     decklist: Mapped[str | None] = mapped_column(Text)
+    colors: Mapped[str | None] = mapped_column(String(100))  # comma-separated e.g. "White,Blue"
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

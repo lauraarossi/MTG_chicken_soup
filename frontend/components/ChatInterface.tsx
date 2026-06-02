@@ -30,17 +30,18 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCr
   const sentInitial = useRef(false);
 
   useEffect(() => {
-    if (initialMessage && !sentInitial.current) {
-      sentInitial.current = true;
-      sendMessage(initialMessage);
-    }
+    if (!initialMessage || sentInitial.current) return;
+    sentInitial.current = true;
+    const controller = new AbortController();
+    sendMessage(initialMessage, controller.signal);
+    return () => controller.abort();
   }, [initialMessage]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  async function sendMessage(text: string) {
+  async function sendMessage(text: string, signal?: AbortSignal) {
     const optimisticMsg: Message = {
       id: Date.now(),
       role: "user",
@@ -51,13 +52,15 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCr
     setLoading(true);
 
     try {
-      const convo = await api.chat.send(text, conversationId.current, deckId);
+      const convo = await api.chat.send(text, conversationId.current, deckId, signal);
+      if (signal?.aborted) return;
       conversationId.current = convo.id;
       setMessages(convo.messages);
     } catch (e) {
+      if ((e as Error)?.name === "AbortError") return;
       console.error(e);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }
 

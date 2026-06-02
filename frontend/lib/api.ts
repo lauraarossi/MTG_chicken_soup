@@ -24,9 +24,10 @@ export const api = {
       fetchAPI<void>(`/decks/${id}`, { method: "DELETE" }),
   },
   chat: {
-    send: (message: string, conversationId?: number, deckId?: number) =>
+    send: (message: string, conversationId?: number, deckId?: number, signal?: AbortSignal) =>
       fetchAPI<Conversation>("/chat", {
         method: "POST",
+        signal,
         body: JSON.stringify({
           message,
           conversation_id: conversationId ?? null,

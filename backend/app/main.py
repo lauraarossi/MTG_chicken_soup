@@ -12,6 +12,7 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("ALTER TABLE decks ADD COLUMN IF NOT EXISTS colors VARCHAR(100) DEFAULT NULL"))
     yield
 
 
