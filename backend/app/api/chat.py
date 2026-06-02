@@ -35,7 +35,10 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     db.add(user_msg)
 
     history = [{"role": m.role, "content": m.content} for m in prior_messages + [user_msg]]
-    context = await get_relevant_cards(request.message, db)
+    try:
+        context = await get_relevant_cards(request.message, db)
+    except Exception:
+        context = None
     response_text = await get_response(request.message, history, context=context)
 
     assistant_msg = Message(
