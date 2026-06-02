@@ -13,7 +13,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/", response_model=ConversationResponse)
+@router.post("", response_model=ConversationResponse)
 async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     try:
         if request.conversation_id:

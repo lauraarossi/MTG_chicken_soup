@@ -8,13 +8,13 @@ from app.schemas.deck import DeckCreate, DeckUpdate, DeckResponse
 router = APIRouter(prefix="/decks", tags=["decks"])
 
 
-@router.get("/", response_model=list[DeckResponse])
+@router.get("", response_model=list[DeckResponse])
 async def list_decks(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Deck).order_by(Deck.created_at.desc()))
     return result.scalars().all()
 
 
-@router.post("/", response_model=DeckResponse, status_code=201)
+@router.post("", response_model=DeckResponse, status_code=201)
 async def create_deck(deck: DeckCreate, db: AsyncSession = Depends(get_db)):
     db_deck = Deck(**deck.model_dump())
     db.add(db_deck)
