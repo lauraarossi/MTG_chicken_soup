@@ -17,6 +17,9 @@ export default function Navigation() {
           <Link href="/decks" className="py-1 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
             My Decks
           </Link>
+          <Link href="/help" className="py-1 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
+            Help
+          </Link>
         </div>
       </div>
     </nav>
