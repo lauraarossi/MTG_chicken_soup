@@ -15,6 +15,15 @@ BASE_PROMPT = (
 )
 
 FORMAT_PROMPTS: dict[str, str] = {
+    "rules": (
+        "You are a Magic: The Gathering rules advisor. "
+        "Answer rules questions, explain terminology, and clarify interactions precisely. "
+        "Cover mechanics like the stack, priority, layers, state-based actions, replacement effects, "
+        "triggered vs activated abilities, and so on — at whatever depth the question requires. "
+        "Cite the relevant Comprehensive Rules section number when it helps clarity. "
+        "If the user has saved decks (provided in context), feel free to reference them when relevant, "
+        "but do not assume the question is about deck building unless they ask."
+    ),
     "limited": (
         "You are advising on a specific limited format (Draft or Sealed). "
         "Your response MUST be specific to the set being discussed — do not give generic limited theory. "
@@ -78,7 +87,10 @@ FORMAT_PROMPTS: dict[str, str] = {
 }
 
 
-def _detect_format(history: list[dict]) -> str:
+def _detect_format(history: list[dict], context: str | None = None) -> str:
+    # Allow the caller to pin the format via a sentinel in system_context
+    if context and context.startswith("FORMAT:"):
+        return context.split("\n")[0].removeprefix("FORMAT:").strip().lower()
     first_msg = next(
         (m["content"].lower() for m in history if m["role"] == "user"), ""
     )
@@ -106,13 +118,19 @@ def _detect_format(history: list[dict]) -> str:
 
 
 def build_system_prompt(history: list[dict], context: str | None = None) -> str:
-    fmt = _detect_format(history)
+    fmt = _detect_format(history, context)
     addendum = FORMAT_PROMPTS.get(fmt, "")
+    # Strip the FORMAT: sentinel line before appending context to the prompt
+    clean_context = (
+        "\n".join(context.splitlines()[1:]).strip()
+        if context and context.startswith("FORMAT:")
+        else context
+    )
     parts = [BASE_PROMPT]
     if addendum:
         parts.append(addendum)
-    if context:
-        parts.append(context)
+    if clean_context:
+        parts.append(clean_context)
     return "\n\n".join(parts)
 
 

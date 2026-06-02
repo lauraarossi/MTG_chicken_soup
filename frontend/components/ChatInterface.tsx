@@ -7,6 +7,7 @@ import type { Message } from "@/types";
 interface Props {
   initialMessage?: string;
   deckId?: number;
+  systemContext?: string;
   onSaveDeck?: (text: string) => Promise<void>;
   onCreateDeck?: (text: string) => void;
   accentColor?: string;
@@ -20,7 +21,7 @@ function extractDecklist(text: string): string | null {
   return lines.length > 0 ? lines.join("\n") : null;
 }
 
-export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCreateDeck, accentColor = "#3b82f6" }: Props) {
+export default function ChatInterface({ initialMessage, deckId, systemContext, onSaveDeck, onCreateDeck, accentColor = "#3b82f6" }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -52,7 +53,7 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCr
     setLoading(true);
 
     try {
-      const convo = await api.chat.send(text, conversationId.current, deckId, signal);
+      const convo = await api.chat.send(text, conversationId.current, deckId, signal, systemContext);
       if (signal?.aborted) return;
       conversationId.current = convo.id;
       setMessages(convo.messages);

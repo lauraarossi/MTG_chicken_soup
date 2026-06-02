@@ -6,6 +6,7 @@ class ChatRequest(BaseModel):
     message: str
     conversation_id: int | None = None
     deck_id: int | None = None
+    system_context: str | None = None  # extra context injected into the system prompt
 
 
 class MessageResponse(BaseModel):
