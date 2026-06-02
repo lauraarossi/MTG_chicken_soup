@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     free_api_base_url: str = ""
     free_model: str = ""
 
+    # Preferred inference provider: "claude", "free", or "ollama".
+    # That provider is tried first; the others follow in default order.
+    # Leave empty to use the default order: ollama → free → claude.
+    inference_provider: str = ""
+
     # RAG embeddings via Ollama
     embedding_model: str = "nomic-embed-text"
 
