@@ -33,5 +33,10 @@ export const api = {
           deck_id: deckId ?? null,
         }),
       }),
+    extractDeck: (conversationId: number) =>
+      fetchAPI<{ decklist: string }>("/chat/extract-deck", {
+        method: "POST",
+        body: JSON.stringify({ conversation_id: conversationId }),
+      }),
   },
 };

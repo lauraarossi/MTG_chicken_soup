@@ -61,10 +61,23 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCr
     }
   }
 
+  const [extracting, setExtracting] = useState(false);
+
   async function handleSaveDeck(msg: Message) {
     if (!onSaveDeck) return;
     await onSaveDeck(msg.content);
     setSavedMsgId(msg.id);
+  }
+
+  async function handleExtractDeck() {
+    if (!onCreateDeck || !conversationId.current) return;
+    setExtracting(true);
+    try {
+      const { decklist } = await api.chat.extractDeck(conversationId.current);
+      if (decklist.trim()) onCreateDeck(decklist);
+    } finally {
+      setExtracting(false);
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -76,6 +89,17 @@ export default function ChatInterface({ initialMessage, deckId, onSaveDeck, onCr
 
   return (
     <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl flex flex-col h-[420px] sm:h-[600px]">
+      {onCreateDeck && messages.length > 0 && (
+        <div className="flex justify-end px-4 pt-2">
+          <button
+            onClick={handleExtractDeck}
+            disabled={extracting || loading}
+            className="text-xs px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
+          >
+            {extracting ? "Extracting…" : "Extract & Save Deck"}
+          </button>
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading && (
           <div className="text-center text-gray-400 dark:text-gray-500 py-8 text-sm">

@@ -24,3 +24,11 @@ class ConversationResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class ExtractDeckRequest(BaseModel):
+    conversation_id: int
+
+
+class ExtractDeckResponse(BaseModel):
+    decklist: str

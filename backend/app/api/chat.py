@@ -5,12 +5,20 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from app.database import get_db
 from app.models.conversation import Conversation, Message
-from app.schemas.conversation import ChatRequest, ConversationResponse
+from app.schemas.conversation import ChatRequest, ConversationResponse, ExtractDeckRequest, ExtractDeckResponse
 from app.ml.inference import get_response
 from app.ml.rag import get_relevant_cards
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
+
+EXTRACT_PROMPT = (
+    "Based on our conversation, extract the complete deck list that was recommended. "
+    "Format it as plain text, one card per line using the format: '1 Card Name'. "
+    "Group cards under section headers prefixed with // (e.g. // Commander, // Creatures, // Instants, // Lands). "
+    "Return ONLY the formatted decklist — no introduction, no explanation, no closing remarks. "
+    "If no complete deck was discussed, return an empty string."
+)
 
 
 @router.post("", response_model=ConversationResponse)
@@ -62,3 +70,21 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         logger.exception("Unhandled error in chat endpoint")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/extract-deck", response_model=ExtractDeckResponse)
+async def extract_deck(request: ExtractDeckRequest, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Conversation)
+        .where(Conversation.id == request.conversation_id)
+        .options(selectinload(Conversation.messages))
+    )
+    conversation = result.scalar_one_or_none()
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    history = [{"role": m.role, "content": m.content} for m in conversation.messages]
+    history.append({"role": "user", "content": EXTRACT_PROMPT})
+
+    decklist = await get_response(EXTRACT_PROMPT, history)
+    return {"decklist": decklist.strip()}
