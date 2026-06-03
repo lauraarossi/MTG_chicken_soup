@@ -20,7 +20,7 @@ python-dotenv>=1.0.1
 
 # Auth
 PyJWT>=2.8.0
-passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
 
 # HTTP client (for Scryfall / EDHREC fetching)
 httpx>=0.28.1
