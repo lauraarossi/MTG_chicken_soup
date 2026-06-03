@@ -47,17 +47,21 @@ export default function ProfilePage() {
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 300 * 1024) {
-      setInfoError("Image must be under 300 KB");
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const MAX = 256;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const result = canvas.toDataURL("image/jpeg", 0.85);
+      URL.revokeObjectURL(url);
       setAvatarPreview(result);
       setAvatarData(result);
     };
-    reader.readAsDataURL(file);
+    img.src = url;
   }
 
   async function saveInfo(e: React.FormEvent) {
