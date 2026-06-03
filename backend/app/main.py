@@ -15,6 +15,7 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("ALTER TABLE decks ADD COLUMN IF NOT EXISTS colors VARCHAR(100) DEFAULT NULL"))
         await conn.execute(text("ALTER TABLE decks ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL"))
         await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL"))
+        await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT"))
     yield
 
 

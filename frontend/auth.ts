@@ -44,7 +44,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const res = await fetch(`${BACKEND}/api/users/google`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ google_id: gProfile.sub, email: gProfile.email, name: gProfile.name }),
+            body: JSON.stringify({ google_id: gProfile.sub, email: gProfile.email, name: gProfile.name, avatar: (profile as any).picture ?? null }),
           });
           if (res.ok) {
             const data = await res.json();
@@ -65,5 +65,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   pages: {
     signIn: "/login",
+    error: "/login",
   },
 });
