@@ -8,7 +8,7 @@ from app.models.conversation import Conversation, Message
 from app.models.user import User
 from app.schemas.conversation import ChatRequest, ConversationResponse, ExtractDeckRequest, ExtractDeckResponse
 from app.ml.inference import get_response
-from app.ml.rag import get_relevant_cards
+from app.ml.rag import get_relevant_cards, lookup_cards_in_query
 from app.security import get_current_user
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -59,10 +59,14 @@ async def chat(
 
         history = [{"role": m.role, "content": m.content} for m in prior_messages + [user_msg]]
         try:
-            rag_context = await get_relevant_cards(request.message, db)
+            card_context = await lookup_cards_in_query(request.message)
         except Exception:
-            rag_context = None
-        context_parts = [p for p in [request.system_context, rag_context] if p]
+            card_context = None
+        try:
+            vector_context = await get_relevant_cards(request.message, db)
+        except Exception:
+            vector_context = None
+        context_parts = [p for p in [request.system_context, card_context, vector_context] if p]
         context = "\n\n".join(context_parts) or None
         response_text = await get_response(request.message, history, context=context)
 
