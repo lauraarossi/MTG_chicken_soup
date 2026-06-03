@@ -1,14 +1,35 @@
 "use client";
 import { signIn } from "next-auth/react";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
-export default function LoginPage() {
+const NEXTAUTH_ERRORS: Record<string, string> = {
+  OAuthCallbackError: "Google sign-in failed. Make sure the redirect URI is configured in Google Cloud Console.",
+  OAuthSignin: "Could not start Google sign-in. Try again.",
+  OAuthCreateAccount: "Could not create account via Google. Try again.",
+  Callback: "Authentication callback failed.",
+  CredentialsSignin: "Invalid email or password.",
+  SessionRequired: "Please sign in to continue.",
+  Default: "Something went wrong. Please try again.",
+};
+
+function LoginForm() {
+  const searchParams = useSearchParams();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const code = searchParams.get("error");
+    if (code) {
+      const msg = NEXTAUTH_ERRORS[code] ?? NEXTAUTH_ERRORS.Default;
+      console.error("[auth] NextAuth error:", code);
+      setError(msg);
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,7 +44,9 @@ export default function LoginPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.detail || "Registration failed");
+        const msg = data.detail || `Registration failed (HTTP ${res.status})`;
+        console.error("[auth] Registration error:", res.status, data);
+        setError(msg);
         setLoading(false);
         return;
       }
@@ -31,7 +54,9 @@ export default function LoginPage() {
 
     const result = await signIn("credentials", { email, password, redirect: false });
     if (result?.error) {
-      setError("Invalid email or password");
+      const msg = NEXTAUTH_ERRORS[result.error] ?? NEXTAUTH_ERRORS.CredentialsSignin;
+      console.error("[auth] Sign-in error:", result.error);
+      setError(msg);
     } else {
       window.location.href = "/";
     }
@@ -91,7 +116,9 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500"
             />
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-500 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>
+            )}
             <button
               type="submit"
               disabled={loading}
@@ -113,5 +140,14 @@ export default function LoginPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+// useSearchParams needs Suspense in Next.js 14
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }

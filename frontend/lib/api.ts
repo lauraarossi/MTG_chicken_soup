@@ -17,7 +17,15 @@ async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `HTTP ${res.status}`);
+    const method = options?.method ?? "GET";
+    console.error(`[api] ${method} /api${path} → ${res.status}`, text);
+    let detail: string;
+    try {
+      detail = JSON.parse(text)?.detail ?? text;
+    } catch {
+      detail = text;
+    }
+    throw new Error(detail || `HTTP ${res.status}`);
   }
   if (res.status === 204) return undefined as T;
   return res.json();

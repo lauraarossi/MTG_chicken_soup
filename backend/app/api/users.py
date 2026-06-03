@@ -1,7 +1,10 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.database import get_db
+
+logger = logging.getLogger(__name__)
 from app.models.user import User
 from app.schemas.auth import (
     RegisterRequest, LoginRequest, GoogleAuthRequest,
@@ -16,6 +19,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
     existing = await db.scalar(select(User).where(User.email == body.email))
     if existing:
+        logger.warning("Registration attempt for existing email: %s", body.email)
         raise HTTPException(status_code=400, detail="Email already registered")
     user = User(email=body.email, name=body.name, hashed_password=hash_password(body.password))
     db.add(user)
@@ -31,6 +35,7 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)):
 async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)):
     user = await db.scalar(select(User).where(User.email == body.email))
     if not user or not user.hashed_password or not verify_password(body.password, user.hashed_password):
+        logger.warning("Failed login attempt for email: %s", body.email)
         raise HTTPException(status_code=401, detail="Invalid email or password")
     return TokenResponse(
         access_token=create_access_token(user.id),
