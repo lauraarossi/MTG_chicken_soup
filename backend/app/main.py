@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database import engine, Base
-from app.api import decks, chat
+from app.api import decks, chat, users
 import app.models  # noqa: register all models with Base
 
 
@@ -13,6 +13,8 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
         await conn.execute(text("ALTER TABLE decks ADD COLUMN IF NOT EXISTS colors VARCHAR(100) DEFAULT NULL"))
+        await conn.execute(text("ALTER TABLE decks ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL"))
+        await conn.execute(text("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE SET NULL"))
     yield
 
 
@@ -31,6 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(users.router, prefix="/api")
 app.include_router(decks.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 

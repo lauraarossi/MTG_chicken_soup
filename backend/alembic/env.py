@@ -7,7 +7,7 @@ from alembic import context
 
 from app.config import settings
 from app.database import Base
-from app.models import Deck, Conversation, Message, CardEmbedding  # noqa: register models
+from app.models import User, Deck, Conversation, Message, CardEmbedding  # noqa: register models
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

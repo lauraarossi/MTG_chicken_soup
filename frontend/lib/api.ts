@@ -1,9 +1,19 @@
 import type { Deck, DeckCreate, Conversation } from "@/types";
 
+let _authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  _authToken = token;
+}
+
 async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(_authToken ? { Authorization: `Bearer ${_authToken}` } : {}),
+  };
   const res = await fetch(`/api${path}`, {
-    headers: { "Content-Type": "application/json" },
     ...options,
+    headers: { ...headers, ...(options?.headers as Record<string, string> | undefined) },
   });
   if (!res.ok) {
     const text = await res.text();

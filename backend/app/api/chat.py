@@ -5,9 +5,11 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy import select
 from app.database import get_db
 from app.models.conversation import Conversation, Message
+from app.models.user import User
 from app.schemas.conversation import ChatRequest, ConversationResponse, ExtractDeckRequest, ExtractDeckResponse
 from app.ml.inference import get_response
 from app.ml.rag import get_relevant_cards
+from app.security import get_current_user
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
@@ -28,7 +30,11 @@ EXTRACT_PROMPT = (
 
 
 @router.post("", response_model=ConversationResponse)
-async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
+async def chat(
+    request: ChatRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     try:
         if request.conversation_id:
             result = await db.execute(
@@ -39,7 +45,7 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
             conversation = result.scalar_one_or_none()
             prior_messages = list(conversation.messages)
         else:
-            conversation = Conversation(deck_id=request.deck_id)
+            conversation = Conversation(deck_id=request.deck_id, user_id=current_user.id)
             db.add(conversation)
             await db.flush()
             prior_messages = []
@@ -76,7 +82,11 @@ async def chat(request: ChatRequest, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/extract-deck", response_model=ExtractDeckResponse)
-async def extract_deck(request: ExtractDeckRequest, db: AsyncSession = Depends(get_db)):
+async def extract_deck(
+    request: ExtractDeckRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     result = await db.execute(
         select(Conversation)
         .where(Conversation.id == request.conversation_id)

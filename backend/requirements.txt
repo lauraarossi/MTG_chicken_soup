@@ -15,7 +15,12 @@ pgvector>=0.3.0
 # Validation & config
 pydantic>=2.13.0
 pydantic-settings>=2.5.0
+email-validator>=2.0.0
 python-dotenv>=1.0.1
+
+# Auth
+PyJWT>=2.8.0
+passlib[bcrypt]>=1.7.4
 
 # HTTP client (for Scryfall / EDHREC fetching)
 httpx>=0.28.1

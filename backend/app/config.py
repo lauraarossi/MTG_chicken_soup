@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     # RAG embeddings via Ollama
     embedding_model: str = "nomic-embed-text"
 
+    # Auth
+    jwt_secret: str = "change-me-in-production"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
