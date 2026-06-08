@@ -10,6 +10,7 @@ const links = [
   { href: "/analyze", label: "Analyze"   },
   { href: "/decks",   label: "My Decks"  },
   { href: "/help",    label: "Ask Magic" },
+  { href: "/about",   label: "Help"      },
 ];
 
 export default function Navigation() {

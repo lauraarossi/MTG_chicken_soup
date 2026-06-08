@@ -165,6 +165,7 @@ async def _respond_claude(system: str, history: list[dict]) -> str:
     response = await client.messages.create(
         model=settings.model_name,
         max_tokens=4096,
+        temperature=0.3,
         system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         messages=history,
     )
@@ -183,7 +184,7 @@ async def _respond_openai_compat(
     async with httpx.AsyncClient(base_url=base_url, timeout=120.0) as client:
         resp = await client.post(
             chat_path,
-            json={"model": model, "messages": messages, "stream": False, "max_tokens": 4096},
+            json={"model": model, "messages": messages, "stream": False, "max_tokens": 4096, "temperature": 0.3},
             headers=headers,
         )
         try:
@@ -249,6 +250,7 @@ async def _stream_claude(system: str, history: list[dict]):
     async with client.messages.stream(
         model=settings.model_name,
         max_tokens=4096,
+        temperature=0.3,
         system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         messages=history,
     ) as stream:
@@ -266,7 +268,7 @@ async def _stream_openai_compat(
         async with client.stream(
             "POST",
             chat_path,
-            json={"model": model, "messages": messages, "stream": True, "max_tokens": 4096},
+            json={"model": model, "messages": messages, "stream": True, "max_tokens": 4096, "temperature": 0.3},
             headers=headers,
         ) as resp:
             resp.raise_for_status()
