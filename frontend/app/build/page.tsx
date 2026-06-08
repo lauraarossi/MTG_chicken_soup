@@ -170,11 +170,25 @@ export default function BuildPage() {
     : true;
 
   const [loadingColors, setLoadingColors] = useState(false);
+  const [commanderCandidates, setCommanderCandidates] = useState<string[]>([]);
+
+  async function fetchCommanderCandidates(name: string): Promise<string[]> {
+    try {
+      const res = await fetch(
+        `https://api.scryfall.com/cards/autocomplete?q=${encodeURIComponent(name)}`,
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      return (data.data as string[]) ?? [];
+    } catch {
+      return [];
+    }
+  }
 
   async function fetchCommanderColors(name: string): Promise<string[]> {
     try {
       const res = await fetch(
-        `https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`,
+        `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}`,
       );
       if (!res.ok) return [];
       const card = await res.json();
@@ -188,17 +202,51 @@ export default function BuildPage() {
     }
   }
 
+  async function proceedWithCommander(name: string) {
+    setLoadingColors(true);
+    const resolvedColors = await fetchCommanderColors(name);
+    setColors(resolvedColors);
+    setLoadingColors(false);
+    setInitialMessage(buildInitialMessage(format, name, archetype, resolvedColors, themes, set, additionalPrompt));
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    let resolvedColors = colors;
+
     if (format.hasCommander && commander.trim()) {
+      const trimmed = commander.trim();
       setLoadingColors(true);
-      resolvedColors = await fetchCommanderColors(commander.trim());
-      setColors(resolvedColors);
+      const candidates = await fetchCommanderCandidates(trimmed);
       setLoadingColors(false);
+
+      // Exact match in candidates → proceed immediately
+      const exactMatch = candidates.find((c) => c.toLowerCase() === trimmed.toLowerCase());
+      if (exactMatch) {
+        setCommander(exactMatch);
+        await proceedWithCommander(exactMatch);
+        return;
+      }
+
+      // Multiple candidates → ask user to pick
+      if (candidates.length > 1) {
+        setCommanderCandidates(candidates.slice(0, 8));
+        return;
+      }
+
+      // Single candidate → use it
+      if (candidates.length === 1) {
+        setCommander(candidates[0]);
+        await proceedWithCommander(candidates[0]);
+        return;
+      }
+
+      // No autocomplete results → try fuzzy and proceed anyway
+      await proceedWithCommander(trimmed);
+      return;
     }
-    setInitialMessage(buildInitialMessage(format, commander, archetype, resolvedColors, themes, set, additionalPrompt));
+
+    setInitialMessage(buildInitialMessage(format, commander, archetype, colors, themes, set, additionalPrompt));
   };
 
   function openSaveDialog(text: string) {
@@ -268,10 +316,33 @@ export default function BuildPage() {
                 <input
                   type="text"
                   value={commander}
-                  onChange={(e) => setCommander(e.target.value)}
+                  onChange={(e) => { setCommander(e.target.value); setCommanderCandidates([]); }}
                   placeholder="e.g. Atraxa, Praetors' Voice"
                   className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
+                {commanderCandidates.length > 0 && (
+                  <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <p className="text-xs font-medium text-amber-800 dark:text-amber-300 mb-2">
+                      Multiple cards match — which one did you mean?
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {commanderCandidates.map((name) => (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={async () => {
+                            setCommanderCandidates([]);
+                            setCommander(name);
+                            await proceedWithCommander(name);
+                          }}
+                          className="text-xs px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700 text-gray-800 dark:text-slate-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors"
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
