@@ -1,6 +1,7 @@
 """RAG retrieval — Scryfall card lookup + pgvector similarity search."""
 from __future__ import annotations
 import re
+import time
 import httpx
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,56 +12,76 @@ from app.models.card_embedding import CardEmbedding
 
 SCRYFALL_NAMED = "https://api.scryfall.com/cards/named"
 SCRYFALL_SEARCH = "https://api.scryfall.com/cards/search"
+SCRYFALL_CATALOG = "https://api.scryfall.com/catalog/card-names"
 SCRYFALL_HEADERS = {"Accept": "application/json", "User-Agent": "MTGChickenSoup/1.0"}
 
-# Words that look like card names but aren't
-_STOPWORDS = frozenset({
-    "The", "This", "That", "These", "Those", "What", "When", "Where", "How",
-    "Why", "Which", "Who", "Can", "Could", "Would", "Should", "Will", "Does",
-    "Do", "Is", "Are", "Was", "Were", "Have", "Has", "Had", "Make", "Build",
-    "Want", "Need", "Help", "Tell", "Show", "Give", "Let", "Get", "Put", "Use",
-    "Commander", "Standard", "Modern", "Legacy", "Vintage", "Pioneer", "Draft",
-    "Sealed", "Pauper", "Explorer", "Historic", "Brawl", "Magic", "MTG", "EDH",
-    "Deck", "Card", "Cards", "Format", "Strategy", "Synergy", "Win", "Play",
-    "Turn", "Mana", "Land", "Lands", "Spell", "Spells", "Creature", "Creatures",
-    "Artifact", "Enchantment", "Instant", "Sorcery", "Planeswalker", "Token",
-    "Also", "Just", "Very", "Really", "Good", "Best", "Great", "Strong", "Okay",
+# Common words that are not card names — filtered for single-word n-gram matches only
+_STOPWORDS_LOWER = frozenset({
+    "the", "this", "that", "these", "those", "what", "when", "where", "how",
+    "why", "which", "who", "can", "could", "would", "should", "will", "does",
+    "do", "is", "are", "was", "were", "have", "has", "had", "make", "build",
+    "want", "need", "help", "tell", "show", "give", "let", "get", "put", "use",
+    "commander", "standard", "modern", "legacy", "vintage", "pioneer", "draft",
+    "sealed", "pauper", "explorer", "historic", "brawl", "magic", "mtg", "edh",
+    "deck", "card", "cards", "format", "strategy", "synergy", "win", "play",
+    "turn", "mana", "land", "lands", "spell", "spells", "creature", "creatures",
+    "artifact", "enchantment", "instant", "sorcery", "planeswalker", "token",
+    "also", "just", "very", "really", "good", "best", "great", "strong", "okay",
+    "and", "or", "but", "with", "for", "my", "your", "its", "our", "their",
+    "i", "a", "an", "in", "on", "at", "of", "to", "it",
 })
 
-# Matches Title Case phrases, including connectors like "and", "of", "to", "the"
-_CARD_NAME_RE = re.compile(
-    r'\b([A-Z][a-zA-Z\'\-]+'
-    r'(?:'
-    r'(?:,?\s+(?:and|of|the|a|an|to|from|into|with)\s+[A-Z][a-zA-Z\'\-]+)'
-    r'|(?:\s+[A-Z][a-zA-Z\'\-]+)'
-    r'){0,4})'
-    r'\b'
-)
+# Catalog cache: lowercase name → canonical Scryfall name
+_card_name_index: dict[str, str] | None = None
+_catalog_fetched_at: float = 0.0
+_CATALOG_TTL = 86400.0  # refresh once per day
 
 
-def _extract_candidates(query: str) -> list[str]:
+async def _get_card_name_index() -> dict[str, str]:
+    global _card_name_index, _catalog_fetched_at
+    now = time.monotonic()
+    if _card_name_index is None or now - _catalog_fetched_at > _CATALOG_TTL:
+        async with httpx.AsyncClient(timeout=15.0, headers=SCRYFALL_HEADERS) as client:
+            r = await client.get(SCRYFALL_CATALOG)
+            r.raise_for_status()
+            names: list[str] = r.json()["data"]
+        _card_name_index = {n.lower(): n for n in names}
+        _catalog_fetched_at = now
+    return _card_name_index
+
+
+async def _extract_candidates(query: str) -> list[str]:
+    """Find card name candidates in query text using Scryfall catalog n-gram matching."""
+    index = await _get_card_name_index()
     candidates: list[str] = []
 
-    # Quoted text is almost certainly a card name
-    for m in re.finditer(r'["“”]([^"“”]{2,60})["“”]', query):
+    # Quoted text is highest confidence — add directly
+    for m in re.finditer(r'["""]([^"""]{2,60})["""]', query):
         candidates.append(m.group(1).strip())
 
-    # Title Case phrases
-    for m in _CARD_NAME_RE.finditer(query):
-        phrase = m.group(1).strip(" ,")
-        if phrase not in _STOPWORDS and len(phrase) > 2:
-            candidates.append(phrase)
+    # Tokenise the query and match n-grams (1–5 words) against the full card catalog
+    words = re.findall(r"[\w'''\-]+", query.lower())
+    spans: list[tuple[int, int, str]] = []  # (start, end, canonical_name)
 
-    # Deduplicate; prefer longer phrases so "Ghalta and Mavren" wins over "Ghalta"
-    seen: set[str] = set()
-    result: list[str] = []
-    for c in sorted(candidates, key=len, reverse=True):
-        lower = c.lower()
-        if not any(lower in existing for existing in seen):
-            seen.add(lower)
-            result.append(c)
+    for n in range(min(5, len(words)), 0, -1):
+        for i in range(len(words) - n + 1):
+            gram = " ".join(words[i : i + n])
+            if gram not in index:
+                continue
+            # Skip common non-card words for single-token matches
+            if n == 1 and gram in _STOPWORDS_LOWER:
+                continue
+            # Skip if this span is already covered by a longer match
+            if any(s <= i and i + n <= e for s, e, _ in spans):
+                continue
+            spans.append((i, i + n, index[gram]))
 
-    return result[:8]
+    quoted_lower = {c.lower() for c in candidates}
+    for _, _, name in spans:
+        if name.lower() not in quoted_lower:
+            candidates.append(name)
+
+    return candidates[:8]
 
 
 def _get_oracle_text(card: dict) -> str:
@@ -106,7 +127,7 @@ async def lookup_cards_in_query(query: str) -> str | None:
     For partial names (e.g. "Ghalta"), returns all matching cards so the model
     can distinguish between them or ask the user to clarify.
     """
-    candidates = _extract_candidates(query)
+    candidates = await _extract_candidates(query)
     if not candidates:
         return None
 
@@ -159,13 +180,29 @@ async def lookup_cards_in_query(query: str) -> str | None:
     return context
 
 
-# ── pgvector similarity search (requires Ollama + embeddings) ────────────────
+# ── pgvector similarity search ────────────────────────────────────────────────
 
-async def _embed(text: str) -> list[float] | None:
+async def _embed_openai(text: str) -> list[float] | None:
+    if not settings.openai_api_key:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(
+                "https://api.openai.com/v1/embeddings",
+                json={"model": settings.openai_embedding_model, "input": text, "dimensions": 768},
+                headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+            )
+            resp.raise_for_status()
+            return resp.json()["data"][0]["embedding"]
+    except Exception:
+        return None
+
+
+async def _embed_ollama(text: str) -> list[float] | None:
     try:
         async with httpx.AsyncClient(base_url=settings.ollama_base_url, timeout=30.0) as client:
             resp = await client.post("/api/embed", json={
-                "model": settings.embedding_model,
+                "model": settings.ollama_embedding_model,
                 "input": text,
             })
             resp.raise_for_status()
@@ -174,8 +211,73 @@ async def _embed(text: str) -> list[float] | None:
         return None
 
 
-async def get_relevant_cards(query: str, db: AsyncSession, k: int = 6) -> str | None:
+async def _embed(text: str) -> list[float] | None:
+    if settings.embedding_provider == "ollama":
+        return await _embed_ollama(text)
+    return await _embed_openai(text)
+
+
+_COMMANDER_WORDS = frozenset({"commander", "edh", "brawl"})
+
+_DECK_BUILD_WORDS = frozenset({
+    "build", "deck", "want", "make", "create", "suggest", "recommend",
+    "tribal", "aggro", "control", "midrange", "combo", "ramp", "tempo",
+    "standard", "pioneer", "modern", "legacy", "vintage", "pauper", "explorer", "historic",
+    "draft", "sealed", "include", "run",
+})
+
+# Tribe/creature-type names that signal card discovery even without "deck" keyword
+_TRIBE_WORDS = frozenset({
+    "pirates", "elves", "goblins", "zombies", "dragons", "angels", "humans", "merfolk",
+    "vampires", "soldiers", "wizards", "rogues", "warriors", "clerics", "shamans",
+    "spirits", "beasts", "demons", "knights", "slivers", "faeries", "elementals",
+})
+
+# Discovery intent: looking for a set of cards rather than asking about specific ones
+_DISCOVERY_WORDS = frozenset({
+    "what", "which", "find", "show", "list", "any", "all", "best", "good", "top",
+})
+
+_CARD_TYPE_WORDS = frozenset({
+    "cards", "card", "spells", "creatures", "artifacts", "enchantments",
+    "instants", "sorceries", "lands", "planeswalkers",
+})
+
+# Pure rules/mechanics signals — no card pool needed to answer these
+_RULES_WORDS = frozenset({
+    "stack", "priority", "resolve", "resolution", "triggered", "trigger",
+    "layer", "replacement", "state-based", "phase", "step", "combat",
+    "upkeep", "sba", "priority", "targeting",
+})
+
+
+def _estimate_k(query: str) -> int:
+    words = set(re.findall(r"\w+", query.lower()))
+
+    # Commander deck building — needs the widest card pool
+    if words & _COMMANDER_WORDS and words & (_DECK_BUILD_WORDS | {"around", "for", "with"}):
+        return 40
+
+    # Non-commander deck building
+    if words & _DECK_BUILD_WORDS:
+        return 25
+
+    # Card discovery: "what dragons are not red", "which cards deal damage to all creatures"
+    if words & _DISCOVERY_WORDS and words & (_CARD_TYPE_WORDS | _TRIBE_WORDS):
+        return 20
+
+    # Pure rules/mechanics with no card-discovery intent — no vector context needed
+    if words & _RULES_WORDS and not words & _DISCOVERY_WORDS:
+        return 0
+
+    # Default: small amount of context for specific card questions, comparisons, etc.
+    return 6
+
+
+async def get_relevant_cards(query: str, db: AsyncSession, k: int | None = None) -> str | None:
     """Return a formatted context string of the k most relevant cards via vector search."""
+    if k is None:
+        k = _estimate_k(query)
     count = await db.scalar(select(func.count()).select_from(CardEmbedding))
     if not count:
         return None

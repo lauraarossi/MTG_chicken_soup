@@ -23,8 +23,12 @@ class Settings(BaseSettings):
     # Leave empty to use the default order: ollama → free → claude.
     inference_provider: str = ""
 
-    # RAG embeddings via Ollama
-    embedding_model: str = "nomic-embed-text"
+    # RAG embeddings
+    # Set EMBEDDING_PROVIDER=ollama to use local Ollama instead (requires nomic-embed-text pulled)
+    embedding_provider: str = "openai"
+    openai_api_key: str = ""
+    openai_embedding_model: str = "text-embedding-3-small"
+    ollama_embedding_model: str = "nomic-embed-text"
 
     # Auth
     jwt_secret: str = "change-me-in-production"
