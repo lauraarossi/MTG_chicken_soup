@@ -17,6 +17,32 @@ function detectCommander(decklist: string): string {
   return m?.[1]?.trim() ?? "";
 }
 
+const LAND_COLOR: Record<string, string> = {
+  plains: "White", island: "Blue", swamp: "Black", mountain: "Red", forest: "Green",
+};
+
+async function detectColors(decklist: string, commander: string, format: string): Promise<string | undefined> {
+  if ((format === "commander" || format === "brawl") && commander) {
+    try {
+      const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(commander)}`);
+      if (res.ok) {
+        const card = await res.json();
+        const identity: string[] = card.color_identity ?? [];
+        const map: Record<string, string> = { W: "White", U: "Blue", B: "Black", R: "Red", G: "Green" };
+        const colors = identity.length === 0 ? ["Colorless"] : identity.map((c) => map[c]).filter(Boolean);
+        if (colors.length > 0) return colors.join(",");
+      }
+    } catch {}
+  }
+  const found = new Set<string>();
+  for (const line of decklist.split("\n")) {
+    const m = line.trim().match(/^\d+x?\s+(.+)$/i);
+    if (m && LAND_COLOR[m[1].trim().toLowerCase()]) found.add(LAND_COLOR[m[1].trim().toLowerCase()]);
+  }
+  const colors = Array.from(found);
+  return colors.length > 0 ? colors.join(",") : undefined;
+}
+
 export default function DecksPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,11 +91,13 @@ export default function DecksPage() {
     if (!importDialog) return;
     setSaving(true);
     try {
+      const colors = await detectColors(importDialog.decklist, importDialog.commander, importDialog.format);
       const deck = await api.decks.create({
         name: importDialog.name,
         commander: importDialog.commander || undefined,
         format: importDialog.format,
         decklist: importDialog.decklist,
+        colors,
       });
       router.push(`/decks/${deck.id}`);
     } finally {
@@ -148,18 +176,20 @@ export default function DecksPage() {
               </select>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Commander <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={importDialog.commander}
-                onChange={(e) => setImportDialog({ ...importDialog, commander: e.target.value })}
-                placeholder="Auto-detected from decklist"
-                className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+            {(importDialog.format === "commander" || importDialog.format === "brawl") && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  Commander <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={importDialog.commander}
+                  onChange={(e) => setImportDialog({ ...importDialog, commander: e.target.value })}
+                  placeholder="Auto-detected from decklist"
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            )}
 
             <div className="flex gap-2 justify-end pt-1">
               <button
