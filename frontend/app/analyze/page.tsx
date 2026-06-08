@@ -147,7 +147,7 @@ export default function AnalyzePage() {
               Paste your decklist <span className="font-normal text-gray-400">(MTGO / Moxfield / .txt format)</span>
             </label>
             <div className="flex items-center gap-2">
-              {importing && <InlineLoadingDots label="Importing" />}
+              {importing && <InlineLoadingDots label="Importing" className="text-xs text-gray-400 dark:text-slate-500" />}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
