@@ -165,11 +165,11 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
 
         {loading && messages[messages.length - 1]?.content === "" && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-1">
-              <span className="text-sm text-gray-500 dark:text-slate-400 mr-1">Thinking</span>
-              <span className="text-sm text-gray-400 dark:text-slate-500 animate-bounce [animation-delay:-0.3s]">•</span>
-              <span className="text-sm text-gray-400 dark:text-slate-500 animate-bounce [animation-delay:-0.15s]">•</span>
-              <span className="text-sm text-gray-400 dark:text-slate-500 animate-bounce">•</span>
+            <div className="bg-gray-100 dark:bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-1 text-sm">
+              <span className="text-gray-500 dark:text-slate-400 mr-1">Thinking</span>
+              <span className="inline-block w-[0.45em] h-[0.45em] rounded-full bg-gray-500 dark:bg-slate-400 animate-bounce [animation-delay:-0.3s]" />
+              <span className="inline-block w-[0.45em] h-[0.45em] rounded-full bg-gray-500 dark:bg-slate-400 animate-bounce [animation-delay:-0.15s]" />
+              <span className="inline-block w-[0.45em] h-[0.45em] rounded-full bg-gray-500 dark:bg-slate-400 animate-bounce" />
             </div>
           </div>
         )}
