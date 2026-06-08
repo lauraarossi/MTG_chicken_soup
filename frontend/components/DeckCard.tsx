@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Deck } from "@/types";
 import { parseColors, MTG_COLOR_META } from "@/lib/mtg-colors";
 import { api } from "@/lib/api";
+import { InlineLoadingDots } from "@/components/LoadingDots";
 
 const COMMANDER_FORMATS = new Set(["commander", "brawl"]);
 
@@ -124,7 +125,7 @@ export default function DeckCard({ deck, onDelete, onDuplicate }: Props) {
             title="Duplicate deck"
             className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-600 dark:hover:text-slate-300 transition-colors text-xs disabled:opacity-50"
           >
-            {duplicating ? "Copying…" : "⎘ Copy"}
+            {duplicating ? <InlineLoadingDots label="Copying" /> : "⎘ Copy"}
           </button>
           <button
             onClick={handleDelete}

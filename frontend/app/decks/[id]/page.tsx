@@ -6,6 +6,7 @@ import type { Deck } from "@/types";
 import ChatInterface from "@/components/ChatInterface";
 import { parseColors, MTG_COLOR_META } from "@/lib/mtg-colors";
 import { exportTxt, exportCsv } from "@/lib/deck-io";
+import LoadingDots, { InlineLoadingDots } from "@/components/LoadingDots";
 
 const COMMANDER_FORMATS = new Set(["commander", "brawl"]);
 
@@ -124,7 +125,7 @@ export default function DeckDetailPage() {
     setDeck(updated);
   }
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500 dark:text-slate-400">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8"><LoadingDots /></div>;
   if (!deck) return null;
 
   const colors = parseColors(deck.colors);
@@ -183,7 +184,7 @@ export default function DeckDetailPage() {
             disabled={deleting}
             className="text-xs px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors disabled:opacity-50"
           >
-            {deleting ? "Deleting…" : "🗑 Delete"}
+            {deleting ? <InlineLoadingDots label="Deleting" /> : "🗑 Delete"}
           </button>
         </div>
       </div>
@@ -217,7 +218,7 @@ export default function DeckDetailPage() {
                     }}
                     className="text-xs px-3 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                   >
-                    {exportingCsv ? "Fetching…" : "Export .csv"}
+                    {exportingCsv ? <InlineLoadingDots label="Fetching" /> : "Export .csv"}
                   </button>
                 </>
               )}
@@ -253,7 +254,7 @@ export default function DeckDetailPage() {
                   disabled={savingDecklist}
                   className="text-sm px-4 py-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {savingDecklist ? "Saving…" : "Save"}
+                  {savingDecklist ? <InlineLoadingDots label="Saving" /> : "Save"}
                 </button>
               </div>
             </div>
@@ -327,7 +328,7 @@ export default function DeckDetailPage() {
                 disabled={savingMeta || !draftName.trim()}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                {savingMeta ? "Saving…" : "Save"}
+                {savingMeta ? <InlineLoadingDots label="Saving" /> : "Save"}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 "use client";
 import { signIn } from "next-auth/react";
+import { InlineLoadingDots } from "@/components/LoadingDots";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 
@@ -124,7 +125,7 @@ function LoginForm() {
               disabled={loading}
               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm transition disabled:opacity-60"
             >
-              {loading ? "…" : mode === "login" ? "Sign in" : "Create account"}
+              {loading ? <InlineLoadingDots label={mode === "login" ? "Signing in" : "Creating account"} /> : mode === "login" ? "Sign in" : "Create account"}
             </button>
           </form>
 

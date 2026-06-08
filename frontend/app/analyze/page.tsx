@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import ChatInterface from "@/components/ChatInterface";
 import { api } from "@/lib/api";
 import { readDeckFile } from "@/lib/deck-io";
+import { InlineLoadingDots } from "@/components/LoadingDots";
 import { MTG_COLOR_META, getAccentColor, getGlowStyle } from "@/lib/mtg-colors";
 import type { ColorValue } from "@/lib/mtg-colors";
 
@@ -146,9 +147,7 @@ export default function AnalyzePage() {
               Paste your decklist <span className="font-normal text-gray-400">(MTGO / Moxfield / .txt format)</span>
             </label>
             <div className="flex items-center gap-2">
-              {importing && (
-                <span className="text-xs text-gray-400 dark:text-slate-500">Importing…</span>
-              )}
+              {importing && <InlineLoadingDots label="Importing" />}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -254,7 +253,7 @@ export default function AnalyzePage() {
                 disabled={saving || !saveDialog.deckName.trim()}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Save"}
+                {saving ? <InlineLoadingDots label="Saving" /> : "Save"}
               </button>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { api } from "@/lib/api";
 import type { Message } from "@/types";
+import LoadingDots, { InlineLoadingDots } from "@/components/LoadingDots";
 
 interface Props {
   initialMessage?: string;
@@ -165,11 +166,8 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
 
         {loading && messages[messages.length - 1]?.content === "" && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-1 text-sm">
-              <span className="text-gray-500 dark:text-slate-400 mr-1">Thinking</span>
-              <span className="inline-block w-[0.45em] h-[0.45em] rounded-full bg-gray-500 dark:bg-slate-400 animate-bounce [animation-delay:-0.3s]" />
-              <span className="inline-block w-[0.45em] h-[0.45em] rounded-full bg-gray-500 dark:bg-slate-400 animate-bounce [animation-delay:-0.15s]" />
-              <span className="inline-block w-[0.45em] h-[0.45em] rounded-full bg-gray-500 dark:bg-slate-400 animate-bounce" />
+            <div className="bg-gray-100 dark:bg-slate-800 rounded-xl px-4 py-3">
+              <LoadingDots label="Thinking" />
             </div>
           </div>
         )}
@@ -207,7 +205,7 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
             : { backgroundColor: frameColors?.[0] ?? accentColor }
         }
       >
-        {extracting ? "Extracting…" : "Extract & Save Deck"}
+        {extracting ? <InlineLoadingDots label="Extracting" /> : "Extract & Save Deck"}
       </button>
     )}
     </div>

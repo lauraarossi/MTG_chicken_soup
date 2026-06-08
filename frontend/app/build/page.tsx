@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ChatInterface from "@/components/ChatInterface";
 import { api } from "@/lib/api";
+import { InlineLoadingDots } from "@/components/LoadingDots";
 import { MTG_COLOR_META, getAccentColor, getGlowStyle } from "@/lib/mtg-colors";
 import type { ColorValue } from "@/lib/mtg-colors";
 
@@ -424,7 +425,7 @@ export default function BuildPage() {
             disabled={!isValid || loadingColors}
             className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loadingColors ? "Looking up commander…" : format.isLimited ? "Get Advice" : "Start Building"}
+            {loadingColors ? <InlineLoadingDots label="Looking up commander" /> : format.isLimited ? "Get Advice" : "Start Building"}
           </button>
         </form>
       ) : (
@@ -476,7 +477,7 @@ export default function BuildPage() {
                 disabled={saving || !saveDialog.deckName.trim()}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Save"}
+                {saving ? <InlineLoadingDots label="Saving" /> : "Save"}
               </button>
             </div>
           </div>

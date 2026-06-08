@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import type { Deck } from "@/types";
 import DeckCard from "@/components/DeckCard";
 import { readDeckFile } from "@/lib/deck-io";
+import LoadingDots, { InlineLoadingDots } from "@/components/LoadingDots";
 
 const FORMATS = [
   "commander","brawl","standard","pioneer","modern",
@@ -106,7 +107,7 @@ export default function DecksPage() {
     }
   }
 
-  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8 text-gray-500 dark:text-slate-400">Loading...</div>;
+  if (loading) return <div className="max-w-4xl mx-auto px-4 py-8"><LoadingDots /></div>;
   if (error) return <div className="max-w-4xl mx-auto px-4 py-8 text-red-500">Error: {error}</div>;
 
   return (
@@ -203,7 +204,7 @@ export default function DecksPage() {
                 disabled={saving || !importDialog.name.trim()}
                 className="px-4 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
               >
-                {saving ? "Saving…" : "Import"}
+                {saving ? <InlineLoadingDots label="Saving" /> : "Import"}
               </button>
             </div>
           </div>

@@ -17,7 +17,14 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
 
 EXTRACT_PROMPT = (
-    "Based on our conversation, extract the complete deck list that was recommended. "
+    "Based on our conversation, generate a COMPLETE, ready-to-play deck list. "
+    "Use the correct deck size for the format: Commander/Brawl = exactly 100 cards (1 commander + 99); "
+    "Standard/Pioneer/Modern/Legacy/Vintage/Pauper/Explorer/Historic = exactly 60 cards; "
+    "Draft/Sealed = at least 40 cards. "
+    "If a full deck was already listed in the conversation, reproduce those cards. "
+    "If only strategy, key cards, or a partial list were discussed, fill ALL remaining slots with "
+    "specific, real card names that fit the strategy — do NOT use placeholders, ellipses, or 'more cards here'. "
+    "Every slot must be a real Magic card. "
     "Format it as plain text, one card per line using the format: '1 Card Name' where the number is the quantity. "
     "Never use numbered list format (e.g. '1.' or '2.') — the leading number is always the copy count, not a sequence number. "
     "Group cards under section headers prefixed with //. "
@@ -28,8 +35,7 @@ EXTRACT_PROMPT = (
     "// Creature, // Planeswalker, // Battle, // Instant, // Sorcery, // Artifact, // Enchantment, // Land, // Other. "
     "Put Conspiracy, Dungeon, Phenomenon, Plane, Scheme, Vanguard, and any other unusual types under // Other. "
     "Do not create a Tribal section — tribal cards go under their other type. "
-    "Return ONLY the formatted decklist — no introduction, no explanation, no closing remarks. "
-    "If no complete deck was discussed, return an empty string."
+    "Return ONLY the formatted decklist — no introduction, no explanation, no closing remarks."
 )
 
 
