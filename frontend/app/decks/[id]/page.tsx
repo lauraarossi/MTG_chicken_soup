@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import type { Deck } from "@/types";
 import ChatInterface from "@/components/ChatInterface";
 import { parseColors, MTG_COLOR_META } from "@/lib/mtg-colors";
+import { exportTxt, exportCsv } from "@/lib/deck-io";
 
 const COMMANDER_FORMATS = new Set(["commander", "brawl"]);
 
@@ -27,6 +28,7 @@ export default function DeckDetailPage() {
   const [draftDecklist, setDraftDecklist] = useState("");
   const [savingDecklist, setSavingDecklist] = useState(false);
   const [copiedDecklist, setCopiedDecklist] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
 
   // Metadata editing
   const [editingMeta, setEditingMeta] = useState(false);
@@ -191,14 +193,33 @@ export default function DeckDetailPage() {
         <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-slate-700" style={borderStyle}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-semibold text-gray-900 dark:text-slate-100">Decklist</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {deck.decklist && !editingDecklist && (
-                <button
-                  onClick={copyDecklistToClipboard}
-                  className="text-xs px-3 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
-                >
-                  {copiedDecklist ? "Copied!" : "Copy"}
-                </button>
+                <>
+                  <button
+                    onClick={copyDecklistToClipboard}
+                    className="text-xs px-3 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    {copiedDecklist ? "Copied!" : "Copy"}
+                  </button>
+                  <button
+                    onClick={() => exportTxt(deck.decklist!, deck.name)}
+                    className="text-xs px-3 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Export .txt
+                  </button>
+                  <button
+                    disabled={exportingCsv}
+                    onClick={async () => {
+                      setExportingCsv(true);
+                      await exportCsv(deck.decklist!, deck.name);
+                      setExportingCsv(false);
+                    }}
+                    className="text-xs px-3 py-1 rounded-lg bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                  >
+                    {exportingCsv ? "Fetching…" : "Export .csv"}
+                  </button>
+                </>
               )}
               {!editingDecklist && (
                 <button
