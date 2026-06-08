@@ -268,7 +268,12 @@ export default function DeckDetailPage() {
 
         <div>
           <h2 className="font-semibold mb-3 text-gray-900 dark:text-slate-100">Chat about this deck</h2>
-          <ChatInterface deckId={deck.id} onSaveDeck={handleSaveFromChat} />
+          <ChatInterface
+            deckId={deck.id}
+            onSaveDeck={handleSaveFromChat}
+            accentColor={colors.length > 0 ? (MTG_COLOR_META.find((m) => m.value === colors[0])?.solid ?? "#3b82f6") : "#3b82f6"}
+            frameColors={colors.map((c) => MTG_COLOR_META.find((m) => m.value === c)?.solid ?? "").filter(Boolean)}
+          />
         </div>
       </div>
 

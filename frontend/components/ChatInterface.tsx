@@ -11,6 +11,7 @@ interface Props {
   onSaveDeck?: (text: string) => Promise<void>;
   onCreateDeck?: (text: string) => void;
   accentColor?: string;
+  frameColors?: string[];  // hex color array for gradient button; falls back to accentColor
   placeholder?: string;
 }
 
@@ -22,7 +23,7 @@ function extractDecklist(text: string): string | null {
   return lines.length > 0 ? lines.join("\n") : null;
 }
 
-export default function ChatInterface({ initialMessage, deckId, systemContext, onSaveDeck, onCreateDeck, accentColor = "#3b82f6", placeholder = "Ask about your deck..." }: Props) {
+export default function ChatInterface({ initialMessage, deckId, systemContext, onSaveDeck, onCreateDeck, accentColor = "#3b82f6", frameColors, placeholder = "Ask about your deck..." }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -163,8 +164,10 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
 
         {loading && messages[messages.length - 1]?.content === "" && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
-              Thinking...
+            <div className="bg-gray-100 dark:bg-slate-800 rounded-xl px-4 py-3 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-slate-500 animate-bounce [animation-delay:-0.3s]" />
+              <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-slate-500 animate-bounce [animation-delay:-0.15s]" />
+              <span className="w-2 h-2 rounded-full bg-gray-400 dark:bg-slate-500 animate-bounce" />
             </div>
           </div>
         )}
@@ -195,7 +198,12 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
       <button
         onClick={handleExtractDeck}
         disabled={extracting || loading}
-        className="w-full py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+        className="w-full py-2 rounded-xl text-white text-sm font-medium disabled:opacity-50 transition-opacity"
+        style={
+          frameColors && frameColors.length > 1
+            ? { background: `linear-gradient(135deg, ${frameColors.join(", ")})` }
+            : { backgroundColor: frameColors?.[0] ?? accentColor }
+        }
       >
         {extracting ? "Extracting…" : "Extract & Save Deck"}
       </button>

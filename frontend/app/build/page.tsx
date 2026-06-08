@@ -372,6 +372,7 @@ export default function BuildPage() {
             <ChatInterface
               initialMessage={initialMessage}
               accentColor={getAccentColor(colors as ColorValue[])}
+              frameColors={colors.map((c) => COLOR_SOLID[c]).filter(Boolean)}
               onCreateDeck={openSaveDialog}
             />
           </div>
