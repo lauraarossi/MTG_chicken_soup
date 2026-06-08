@@ -45,10 +45,11 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
   }, [messages, loading]);
 
   async function sendMessage(text: string, signal?: AbortSignal) {
-    const streamingId = Date.now() + 1;
+    const now = Date.now();
+    const streamingId = now + 1;
     setMessages((prev) => [
       ...prev,
-      { id: Date.now(), role: "user", content: text, created_at: new Date().toISOString() },
+      { id: now, role: "user", content: text, created_at: new Date().toISOString() },
       { id: streamingId, role: "assistant", content: "", created_at: new Date().toISOString() },
     ]);
     setLoading(true);
