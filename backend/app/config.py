@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     # Auth
     jwt_secret: str = "change-me-in-production"
 
+    # Public API keys — comma-separated; set at least one to enable /api/v1/*
+    v1_api_keys: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

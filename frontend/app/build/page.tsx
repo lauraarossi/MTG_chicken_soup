@@ -113,21 +113,23 @@ function buildInitialMessage(
   colors: string[],
   themes: string,
   set: string,
+  additionalPrompt: string,
 ): string {
+  const extra = additionalPrompt.trim() ? ` ${additionalPrompt.trim()}` : "";
   if (format.isLimited) {
     const setClause = set.trim() ? ` for ${set.trim()}` : "";
     const colorClause = colors.length > 0 ? ` I'm considering going into ${colors.join("-")} colors.` : "";
     return `I'm playing ${format.label}${setClause}.${colorClause} What are the key cards, archetypes, and strategies I should know about? Please give me practical advice on card evaluation and what to prioritise.`;
   }
   if (format.hasCommander) {
-    return `I want to build a ${format.label} deck around ${commander.trim()}. What are the key cards and strategy I should consider?`;
+    return `I want to build a ${format.label} deck around ${commander.trim()}. What are the key cards and strategy I should consider?${extra}`;
   }
   const parts: string[] = [];
   if (colors.length > 0) parts.push(`colours: ${colors.join("-")}`);
   if (archetype.trim()) parts.push(`archetype: ${archetype.trim()}`);
   if (themes.trim()) parts.push(`built around: ${themes.trim()}`);
   const detailClause = parts.length > 0 ? ` (${parts.join(", ")})` : "";
-  return `I want to build a ${format.label} deck${detailClause}. What are the key cards and strategy I should consider?`;
+  return `I want to build a ${format.label} deck${detailClause}. What are the key cards and strategy I should consider?${extra}`;
 }
 
 function extractDecklist(text: string): string | null {
@@ -146,6 +148,7 @@ export default function BuildPage() {
   const [colors, setColors] = useState<string[]>([]);
   const [themes, setThemes] = useState("");
   const [set, setSet] = useState("");
+  const [additionalPrompt, setAdditionalPrompt] = useState("");
   const [initialMessage, setInitialMessage] = useState<string | null>(null);
   const [saveDialog, setSaveDialog] = useState<{ text: string; deckName: string } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -195,7 +198,7 @@ export default function BuildPage() {
       setColors(resolvedColors);
       setLoadingColors(false);
     }
-    setInitialMessage(buildInitialMessage(format, commander, archetype, resolvedColors, themes, set));
+    setInitialMessage(buildInitialMessage(format, commander, archetype, resolvedColors, themes, set, additionalPrompt));
   };
 
   function openSaveDialog(text: string) {
@@ -257,18 +260,32 @@ export default function BuildPage() {
           </div>
 
           {format.hasCommander && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Commander
-              </label>
-              <input
-                type="text"
-                value={commander}
-                onChange={(e) => setCommander(e.target.value)}
-                placeholder="e.g. Atraxa, Praetors' Voice"
-                className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  Commander
+                </label>
+                <input
+                  type="text"
+                  value={commander}
+                  onChange={(e) => setCommander(e.target.value)}
+                  placeholder="e.g. Atraxa, Praetors' Voice"
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  Additional instructions <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  value={additionalPrompt}
+                  onChange={(e) => setAdditionalPrompt(e.target.value)}
+                  placeholder="e.g. include Llanowar Elves, lean heavily on removal, avoid counterspells, budget under $100"
+                  rows={2}
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+                />
+              </div>
+            </>
           )}
 
           {!format.hasCommander && !format.isLimited && (
@@ -296,6 +313,18 @@ export default function BuildPage() {
                   onChange={(e) => setThemes(e.target.value)}
                   placeholder="e.g. Goblin tribal, Teferi, graveyard recursion"
                   className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                  Additional instructions <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  value={additionalPrompt}
+                  onChange={(e) => setAdditionalPrompt(e.target.value)}
+                  placeholder="e.g. include Lightning Bolt, lean on cheap interaction, budget under $50"
+                  rows={2}
+                  className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
                 />
               </div>
             </>

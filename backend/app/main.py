@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.database import engine, Base
 from app.api import decks, chat, users
+from app.api.v1 import deck as v1_deck
 import app.models  # noqa: register all models with Base
 
 
@@ -37,6 +38,7 @@ app.add_middleware(
 app.include_router(users.router, prefix="/api")
 app.include_router(decks.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
+app.include_router(v1_deck.router, prefix="/api")
 
 
 @app.get("/api/health")
