@@ -111,15 +111,18 @@ async def lookup_cards_in_query(query: str) -> str | None:
         return None
 
     cards: dict[str, dict] = {}  # name → card object
+    ambiguous: list[str] = []    # candidate names that matched multiple cards
 
     async with httpx.AsyncClient(timeout=5.0, headers=SCRYFALL_HEADERS) as client:
         for candidate in candidates[:6]:
             try:
                 # Fuzzy match — finds "Ghalta and Mavren" from "ghalta and mavren"
                 r = await client.get(SCRYFALL_NAMED, params={"fuzzy": candidate})
+                fuzzy_name = None
                 if r.status_code == 200:
                     card = r.json()
                     cards[card["name"]] = card
+                    fuzzy_name = card["name"]
 
                 # For short candidates, also search for all cards sharing the name
                 # so "Ghalta" surfaces Primal Hunger, Stampede Tyrant, and Mavren together
@@ -129,8 +132,13 @@ async def lookup_cards_in_query(query: str) -> str | None:
                         params={"q": f'name:"{candidate}"', "order": "edhrec", "unique": "cards"},
                     )
                     if sr.status_code == 200:
-                        for c in sr.json().get("data", [])[:4]:
+                        matches = sr.json().get("data", [])[:4]
+                        for c in matches:
                             cards.setdefault(c["name"], c)
+                        # Flag as ambiguous if search returned multiple distinct cards
+                        distinct = [c["name"] for c in matches if c["name"] != fuzzy_name]
+                        if distinct:
+                            ambiguous.append(candidate)
 
             except Exception:
                 continue
@@ -139,10 +147,16 @@ async def lookup_cards_in_query(query: str) -> str | None:
         return None
 
     card_blocks = "\n\n".join(_format_card(c) for c in list(cards.values())[:8])
-    return (
-        "The following card data is from Scryfall — treat it as ground truth:\n\n"
-        + card_blocks
-    )
+    context = "The following card data is from Scryfall — treat it as ground truth:\n\n" + card_blocks
+
+    if ambiguous:
+        names = ", ".join(f'"{a}"' for a in ambiguous)
+        context += (
+            f"\n\n⚠️ AMBIGUOUS CARD NAME(S): {names} matched multiple different cards (all shown above). "
+            "You MUST ask the user which card they mean before proceeding."
+        )
+
+    return context
 
 
 # ── pgvector similarity search (requires Ollama + embeddings) ────────────────

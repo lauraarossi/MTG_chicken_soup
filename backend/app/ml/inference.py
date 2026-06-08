@@ -14,8 +14,9 @@ BASE_PROMPT = (
     "concrete card names, synergies, or strategies instead. "
     "When card data from Scryfall is provided in the context, treat it as ground truth — "
     "use the exact oracle text, type line, and mana cost provided, and do not correct or contradict it "
-    "even if it differs from your training data. If a card name is ambiguous, ask the user to clarify "
-    "which version they mean rather than assuming."
+    "even if it differs from your training data. "
+    "If the context flags a card name as ambiguous (multiple cards match), you MUST stop and ask "
+    "the user which card they mean before giving any advice. Never assume or pick one silently."
 )
 
 FORMAT_PROMPTS: dict[str, str] = {
