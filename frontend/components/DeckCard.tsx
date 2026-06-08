@@ -15,13 +15,12 @@ function ColorPips({ colors }: { colors: ReturnType<typeof parseColors> }) {
         const meta = MTG_COLOR_META.find((m) => m.value === c);
         if (!meta) return null;
         return (
-          <span
+          <i
             key={c}
-            className={`inline-flex items-center justify-center w-5 h-5 rounded-full border text-[10px] font-bold ${meta.pip}`}
+            className={`ms ms-cost ms-shadow ${meta.ms}`}
+            style={{ fontSize: "18px" }}
             title={c}
-          >
-            {meta.symbol}
-          </span>
+          />
         );
       })}
     </div>

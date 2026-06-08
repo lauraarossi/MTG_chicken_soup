@@ -44,23 +44,38 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
   }, [messages, loading]);
 
   async function sendMessage(text: string, signal?: AbortSignal) {
-    const optimisticMsg: Message = {
-      id: Date.now(),
-      role: "user",
-      content: text,
-      created_at: new Date().toISOString(),
-    };
-    setMessages((prev) => [...prev, optimisticMsg]);
+    const streamingId = Date.now() + 1;
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), role: "user", content: text, created_at: new Date().toISOString() },
+      { id: streamingId, role: "assistant", content: "", created_at: new Date().toISOString() },
+    ]);
     setLoading(true);
 
     try {
-      const convo = await api.chat.send(text, conversationId.current, deckId, signal, systemContext);
-      if (signal?.aborted) return;
-      conversationId.current = convo.id;
-      setMessages(convo.messages);
+      const { conversationId: cid, messageId: mid } = await api.chat.stream(
+        text,
+        (token) => {
+          if (signal?.aborted) return;
+          setMessages((prev) =>
+            prev.map((m) => m.id === streamingId ? { ...m, content: m.content + token } : m)
+          );
+        },
+        conversationId.current,
+        deckId,
+        systemContext,
+        signal,
+      );
+      if (!signal?.aborted) {
+        conversationId.current = cid;
+        setMessages((prev) =>
+          prev.map((m) => m.id === streamingId ? { ...m, id: mid } : m)
+        );
+      }
     } catch (e) {
       if ((e as Error)?.name === "AbortError") return;
       console.error(e);
+      setMessages((prev) => prev.filter((m) => m.id !== streamingId));
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
@@ -93,18 +108,8 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
   };
 
   return (
+    <div className="flex flex-col gap-2">
     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl flex flex-col h-[420px] sm:h-[600px]">
-      {onCreateDeck && messages.length > 0 && (
-        <div className="flex justify-end px-4 pt-2">
-          <button
-            onClick={handleExtractDeck}
-            disabled={extracting || loading}
-            className="text-xs px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
-          >
-            {extracting ? "Extracting…" : "Extract & Save Deck"}
-          </button>
-        </div>
-      )}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && !loading && (
           <div className="text-center text-gray-400 dark:text-slate-500 py-8 text-sm">
@@ -112,7 +117,7 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
           </div>
         )}
 
-        {messages.map((msg) => (
+        {messages.filter((m) => m.role !== "assistant" || m.content !== "").map((msg) => (
           <div
             key={msg.id}
             className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
@@ -156,7 +161,7 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
           </div>
         ))}
 
-        {loading && (
+        {loading && messages[messages.length - 1]?.content === "" && (
           <div className="flex justify-start">
             <div className="bg-gray-100 dark:bg-slate-800 rounded-xl px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
               Thinking...
@@ -185,6 +190,16 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
           Send
         </button>
       </form>
+    </div>
+    {onCreateDeck && messages.length > 0 && (
+      <button
+        onClick={handleExtractDeck}
+        disabled={extracting || loading}
+        className="w-full py-2 rounded-xl bg-green-600 text-white text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+      >
+        {extracting ? "Extracting…" : "Extract & Save Deck"}
+      </button>
+    )}
     </div>
   );
 }

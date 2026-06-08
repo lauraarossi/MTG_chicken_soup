@@ -54,6 +54,56 @@ export const api = {
           system_context: systemContext ?? null,
         }),
       }),
+    stream: async (
+      message: string,
+      onToken: (token: string) => void,
+      conversationId?: number,
+      deckId?: number,
+      systemContext?: string,
+      signal?: AbortSignal,
+    ): Promise<{ conversationId: number; messageId: number }> => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        ...(_authToken ? { Authorization: `Bearer ${_authToken}` } : {}),
+      };
+      const res = await fetch(`/api/chat/stream`, {
+        method: "POST",
+        headers,
+        signal,
+        body: JSON.stringify({
+          message,
+          conversation_id: conversationId ?? null,
+          deck_id: deckId ?? null,
+          system_context: systemContext ?? null,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text);
+      }
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let result = { conversationId: 0, messageId: 0 };
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop()!;
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const data = line.slice(6).trim();
+          if (!data) continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.t !== undefined) onToken(parsed.t);
+            else if (parsed.d) result = { conversationId: parsed.cid, messageId: parsed.mid };
+          } catch { /* ignore malformed lines */ }
+        }
+      }
+      return result;
+    },
     extractDeck: (conversationId: number) =>
       fetchAPI<{ decklist: string }>("/chat/extract-deck", {
         method: "POST",

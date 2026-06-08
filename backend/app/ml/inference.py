@@ -1,5 +1,6 @@
 """LLM inference — supports Claude API, any OpenAI-compatible API, and Ollama."""
 from __future__ import annotations
+import json
 import anthropic
 import httpx
 from app.config import settings
@@ -16,7 +17,11 @@ BASE_PROMPT = (
     "use the exact oracle text, type line, and mana cost provided, and do not correct or contradict it "
     "even if it differs from your training data. "
     "If the context flags a card name as ambiguous (multiple cards match), you MUST stop and ask "
-    "the user which card they mean before giving any advice. Never assume or pick one silently."
+    "the user which card they mean before giving any advice. Never assume or pick one silently. "
+    "When a 'Related cards (semantic search)' block appears in the context, treat those as a "
+    "pre-screened candidate pool — draw from them first before reaching into general training knowledge. "
+    "When recommending cards for a deck, briefly justify each suggestion (one sentence) — "
+    "explain why it fits the strategy, not just what it does."
 )
 
 FORMAT_PROMPTS: dict[str, str] = {
@@ -88,6 +93,12 @@ FORMAT_PROMPTS: dict[str, str] = {
         "You are advising on a Historic deck (MTG Arena format with expanded card pool). "
         "The card pool includes Historic Anthologies, Remastered sets, and some non-Pioneer cards. "
         "Focus on powerful synergies available in this unique card pool."
+    ),
+    "general": (
+        "Answer the specific question clearly and directly. "
+        "If the user wants to build a deck without specifying a format, treat it as casual 60-card "
+        "or ask one focused question to clarify (format, power level, or budget) before diving in. "
+        "When recommending cards, draw first from any 'Related cards' context provided."
     ),
 }
 
@@ -229,3 +240,73 @@ async def get_response(
         "FREE_MODEL + FREE_API_BASE_URL for a free provider, "
         "or OLLAMA_MODEL for local inference."
     )
+
+
+# ── Streaming variants ────────────────────────────────────────────────────────
+
+async def _stream_claude(system: str, history: list[dict]):
+    client = _get_anthropic_client()
+    async with client.messages.stream(
+        model=settings.model_name,
+        max_tokens=4096,
+        system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+        messages=history,
+    ) as stream:
+        async for text in stream.text_stream:
+            yield text
+
+
+async def _stream_openai_compat(
+    base_url: str, api_key: str, model: str, system: str, history: list[dict],
+    chat_path: str = "/v1/chat/completions",
+):
+    messages = [{"role": "system", "content": system}] + history
+    headers = {"Authorization": f"Bearer {api_key}"} if api_key else {}
+    async with httpx.AsyncClient(base_url=base_url, timeout=120.0) as client:
+        async with client.stream(
+            "POST",
+            chat_path,
+            json={"model": model, "messages": messages, "stream": True, "max_tokens": 4096},
+            headers=headers,
+        ) as resp:
+            resp.raise_for_status()
+            async for line in resp.aiter_lines():
+                if not line.startswith("data: "):
+                    continue
+                data = line[6:].strip()
+                if data == "[DONE]":
+                    return
+                try:
+                    token = json.loads(data)["choices"][0]["delta"].get("content", "")
+                    if token:
+                        yield token
+                except Exception:
+                    continue
+
+
+async def stream_response(message: str, history: list[dict], context: str | None = None):
+    """Async generator that yields text chunks from the configured LLM provider."""
+    system = build_system_prompt(history, context)
+    preferred = settings.inference_provider.lower() if settings.inference_provider else ""
+    order = [preferred] + [p for p in _DEFAULT_ORDER if p != preferred] if preferred in _DEFAULT_ORDER else _DEFAULT_ORDER
+
+    for provider in order:
+        if provider == "ollama" and settings.ollama_model:
+            async for chunk in _stream_openai_compat(
+                settings.ollama_base_url, "", settings.ollama_model, system, history,
+            ):
+                yield chunk
+            return
+        elif provider == "free" and settings.free_model and settings.free_api_base_url:
+            async for chunk in _stream_openai_compat(
+                settings.free_api_base_url, settings.free_api_key, settings.free_model, system, history,
+                chat_path="/chat/completions",
+            ):
+                yield chunk
+            return
+        elif provider == "claude" and settings.anthropic_api_key:
+            async for chunk in _stream_claude(system, history):
+                yield chunk
+            return
+
+    yield "No LLM configured. Set ANTHROPIC_API_KEY, FREE_MODEL + FREE_API_BASE_URL, or OLLAMA_MODEL."

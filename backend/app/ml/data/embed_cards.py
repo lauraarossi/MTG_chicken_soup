@@ -16,12 +16,19 @@ from pathlib import Path
 
 import httpx
 from sqlalchemy import delete
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
 from tqdm import tqdm
 
 from app.config import settings
-from app.database import AsyncSessionLocal, engine, Base
+from app.database import Base
 from app.models.card_embedding import CardEmbedding, EMBEDDING_DIM
+
+_db_url = settings.database_url.replace("postgres://", "postgresql+asyncpg://", 1).replace("postgresql://", "postgresql+asyncpg://", 1)
+# NullPool: no connection reuse — each batch gets a fresh TCP connection.
+# Required for long-running remote scripts where proxies close idle connections.
+_engine = create_async_engine(_db_url, echo=False, poolclass=NullPool)
+_Session = async_sessionmaker(_engine, expire_on_commit=False)
 
 CARD_INDEX = Path("data/processed/card_index.json")
 BATCH_SIZE = 32
@@ -118,7 +125,7 @@ async def main() -> None:
     cards = list(card_index.values())
     print(f"{len(cards)} cards loaded.")
 
-    async with engine.begin() as conn:
+    async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     ollama_client = None
@@ -131,43 +138,44 @@ async def main() -> None:
             await ollama_client.aclose()
             return
 
-    async with AsyncSessionLocal() as db:
-        # Clear existing embeddings before re-generating
+    # Clear existing embeddings in its own session
+    async with _Session() as db:
         await db.execute(delete(CardEmbedding))
         await db.commit()
 
-        with tqdm(total=len(cards), desc="Embedding cards") as bar:
-            for i in range(0, len(cards), BATCH_SIZE):
-                batch = cards[i : i + BATCH_SIZE]
-                texts = [_card_text(c) for c in batch]
+    total_batches = (len(cards) + BATCH_SIZE - 1) // BATCH_SIZE
+    with tqdm(total=len(cards), desc="Embedding cards") as bar:
+        for i in range(0, len(cards), BATCH_SIZE):
+            batch = cards[i : i + BATCH_SIZE]
+            texts = [_card_text(c) for c in batch]
 
-                if provider == "ollama" and ollama_client:
-                    embeddings = await embed_batch_ollama(texts, ollama_client)
-                else:
-                    embeddings = await embed_batch_openai(texts)
+            if provider == "ollama" and ollama_client:
+                embeddings = await embed_batch_ollama(texts, ollama_client)
+            else:
+                embeddings = await embed_batch_openai(texts)
 
-                total_batches = (len(cards) + BATCH_SIZE - 1) // BATCH_SIZE
-                if embeddings is None:
-                    print(f"Skipping batch {i // BATCH_SIZE + 1}/{total_batches}")
-                    bar.update(len(batch))
-                    continue
+            if embeddings is None:
+                print(f"Skipping batch {i // BATCH_SIZE + 1}/{total_batches}")
+                bar.update(len(batch))
+                continue
 
-                # Brief pause between batches to respect rate limits
-                if provider == "openai":
-                    await asyncio.sleep(0.25)
+            if provider == "openai":
+                await asyncio.sleep(0.25)
 
-                rows = [
-                    CardEmbedding(
-                        card_name=batch[j]["name"],
-                        card_text=texts[j],
-                        embedding=embeddings[j],
-                    )
-                    for j in range(len(batch))
-                    if len(embeddings[j]) == EMBEDDING_DIM
-                ]
+            rows = [
+                CardEmbedding(
+                    card_name=batch[j]["name"],
+                    card_text=texts[j],
+                    embedding=embeddings[j],
+                )
+                for j in range(len(batch))
+                if len(embeddings[j]) == EMBEDDING_DIM
+            ]
+            # Fresh session per batch — avoids long-lived connection drops on remote DBs
+            async with _Session() as db:
                 db.add_all(rows)
                 await db.commit()
-                bar.update(len(batch))
+            bar.update(len(batch))
 
     if ollama_client:
         await ollama_client.aclose()

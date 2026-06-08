@@ -4,7 +4,7 @@ from app.config import settings
 
 # Railway (and some other providers) supply postgres:// or postgresql:// — normalise to asyncpg dialect
 _db_url = settings.database_url.replace("postgres://", "postgresql+asyncpg://", 1).replace("postgresql://", "postgresql+asyncpg://", 1)
-engine = create_async_engine(_db_url, echo=False)
+engine = create_async_engine(_db_url, echo=False, pool_pre_ping=True, pool_recycle=1800)
 AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 

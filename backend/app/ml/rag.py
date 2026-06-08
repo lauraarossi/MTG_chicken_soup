@@ -278,6 +278,8 @@ async def get_relevant_cards(query: str, db: AsyncSession, k: int | None = None)
     """Return a formatted context string of the k most relevant cards via vector search."""
     if k is None:
         k = _estimate_k(query)
+    if k == 0:
+        return None
     count = await db.scalar(select(func.count()).select_from(CardEmbedding))
     if not count:
         return None

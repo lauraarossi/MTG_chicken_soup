@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import Navigation from "@/components/Navigation";
 import Providers from "@/components/Providers";
 import "./globals.css";
+import "mana-font/css/mana.min.css";
 
 const inter = Inter({ subsets: ["latin"] });
 

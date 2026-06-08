@@ -68,7 +68,8 @@ function ColorCheckboxes({
         Colours <span className="text-gray-400 font-normal">(optional — none = no preference)</span>
       </label>
       <div className="flex flex-wrap gap-2">
-        {MTG_COLORS.map(({ value, symbol, bg, border, text, tip }) => {
+        {MTG_COLORS.map(({ value, bg, border, text, tip }) => {
+          const meta = MTG_COLOR_META.find((m) => m.value === value);
           const checked = colors.includes(value);
           return (
             <button
@@ -79,7 +80,7 @@ function ColorCheckboxes({
                 checked ? `${border} ring-2 ring-offset-1 ring-indigo-500` : "border-transparent opacity-60 hover:opacity-100"
               }`}
             >
-              <span className="font-bold">{symbol}</span>
+              {meta && <i className={`ms ms-cost ms-shadow ${meta.ms}`} style={{ fontSize: "16px" }} />}
               <span>{value}</span>
               <Tooltip text={tip} />
             </button>
