@@ -125,6 +125,12 @@ export default function DeckDetailPage() {
     setDeck(updated);
   }
 
+  async function handleExtractFromChat(decklist: string) {
+    if (!deck || !decklist.trim()) return;
+    const updated = await api.decks.update(deck.id, { decklist: decklist.trim() });
+    setDeck(updated);
+  }
+
   if (loading) return <div className="max-w-4xl mx-auto px-4 py-8"><LoadingDots /></div>;
   if (!deck) return null;
 
@@ -272,6 +278,8 @@ export default function DeckDetailPage() {
           <ChatInterface
             deckId={deck.id}
             onSaveDeck={handleSaveFromChat}
+            onCreateDeck={handleExtractFromChat}
+            extractLabel="Extract & Update Deck"
             accentColor={colors.length > 0 ? (MTG_COLOR_META.find((m) => m.value === colors[0])?.solid ?? "#3b82f6") : "#3b82f6"}
             frameColors={colors.map((c) => MTG_COLOR_META.find((m) => m.value === c)?.solid ?? "").filter(Boolean)}
           />

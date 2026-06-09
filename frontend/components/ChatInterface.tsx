@@ -14,6 +14,7 @@ interface Props {
   accentColor?: string;
   frameColors?: string[];  // hex color array for gradient button; falls back to accentColor
   placeholder?: string;
+  extractLabel?: string;
 }
 
 function extractDecklist(text: string): string | null {
@@ -24,7 +25,7 @@ function extractDecklist(text: string): string | null {
   return lines.length > 0 ? lines.join("\n") : null;
 }
 
-export default function ChatInterface({ initialMessage, deckId, systemContext, onSaveDeck, onCreateDeck, accentColor = "#3b82f6", frameColors, placeholder = "Ask about your deck..." }: Props) {
+export default function ChatInterface({ initialMessage, deckId, systemContext, onSaveDeck, onCreateDeck, accentColor = "#3b82f6", frameColors, placeholder = "Ask about your deck...", extractLabel = "Extract & Save Deck" }: Props) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -110,6 +111,11 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
     setInput("");
   };
 
+  const accentStyle: React.CSSProperties =
+    frameColors && frameColors.length > 1
+      ? { background: `linear-gradient(135deg, ${frameColors.join(", ")})` }
+      : { backgroundColor: accentColor };
+
   return (
     <div className="flex flex-col gap-2">
     <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl flex flex-col h-[420px] sm:h-[600px]">
@@ -131,7 +137,7 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
                   ? "text-white"
                   : "bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-slate-100"
               }`}
-              style={msg.role === "user" ? { backgroundColor: accentColor } : {}}
+              style={msg.role === "user" ? accentStyle : {}}
             >
               {msg.role === "user" ? (
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -188,7 +194,7 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
           type="submit"
           disabled={loading || !input.trim()}
           className="text-white px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{ backgroundColor: accentColor }}
+          style={accentStyle}
         >
           Send
         </button>
@@ -199,13 +205,9 @@ export default function ChatInterface({ initialMessage, deckId, systemContext, o
         onClick={handleExtractDeck}
         disabled={extracting || loading}
         className="w-full py-2 rounded-xl text-white text-sm font-medium disabled:opacity-50 transition-opacity"
-        style={
-          frameColors && frameColors.length > 1
-            ? { background: `linear-gradient(135deg, ${frameColors.join(", ")})` }
-            : { backgroundColor: frameColors?.[0] ?? accentColor }
-        }
+        style={accentStyle}
       >
-        {extracting ? <InlineLoadingDots label="Extracting" /> : "Extract & Save Deck"}
+        {extracting ? <InlineLoadingDots label="Extracting" /> : extractLabel}
       </button>
     )}
     </div>

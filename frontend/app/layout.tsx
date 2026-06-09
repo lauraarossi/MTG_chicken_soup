@@ -18,7 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} bg-gray-50 dark:bg-slate-950 min-h-screen`}>
         <Providers>
           <Navigation />
-          {children}
+          <div className="md:pl-56 pt-14 md:pt-0 min-h-screen">
+            {children}
+          </div>
         </Providers>
       </body>
     </html>
