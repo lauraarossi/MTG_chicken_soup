@@ -6,6 +6,7 @@ import { api } from "@/lib/api";
 import { InlineLoadingDots } from "@/components/LoadingDots";
 import { MTG_COLOR_META, getAccentColor, getGlowStyle } from "@/lib/mtg-colors";
 import type { ColorValue } from "@/lib/mtg-colors";
+import { detectColorsFromDecklist } from "@/lib/detect-colors";
 
 const COLOR_SOLID: Record<string, string> = Object.fromEntries(MTG_COLOR_META.map((m) => [m.value, m.solid]));
 
@@ -261,12 +262,17 @@ export default function BuildPage() {
     if (!saveDialog) return;
     setSaving(true);
     try {
+      const decklist = extractDecklist(saveDialog.text) ?? saveDialog.text;
+      let resolvedColors = colors;
+      if (resolvedColors.length === 0) {
+        resolvedColors = await detectColorsFromDecklist(decklist) as string[];
+      }
       const deck = await api.decks.create({
         name: saveDialog.deckName,
         commander: commander.trim() || undefined,
         format: format.value,
-        decklist: extractDecklist(saveDialog.text) ?? saveDialog.text,
-        colors: colors.length > 0 ? colors.join(",") : undefined,
+        decklist,
+        colors: resolvedColors.length > 0 ? resolvedColors.join(",") : undefined,
       });
       router.push(`/decks/${deck.id}`);
     } finally {

@@ -7,6 +7,7 @@ import ChatInterface from "@/components/ChatInterface";
 import { parseColors, MTG_COLOR_META } from "@/lib/mtg-colors";
 import { exportTxt, exportCsv } from "@/lib/deck-io";
 import LoadingDots, { InlineLoadingDots } from "@/components/LoadingDots";
+import { detectColorsFromDecklist } from "@/lib/detect-colors";
 
 const COMMANDER_FORMATS = new Set(["commander", "brawl"]);
 
@@ -47,7 +48,16 @@ export default function DeckDetailPage() {
     if (!id) return;
     api.decks
       .get(id)
-      .then(setDeck)
+      .then(async (deck) => {
+        setDeck(deck);
+        if (!deck.colors && deck.decklist) {
+          const detected = await detectColorsFromDecklist(deck.decklist);
+          if (detected.length > 0) {
+            const updated = await api.decks.update(deck.id, { colors: detected.join(",") });
+            setDeck(updated);
+          }
+        }
+      })
       .catch(() => router.push("/decks"))
       .finally(() => setLoading(false));
   }, [params.id, router]);

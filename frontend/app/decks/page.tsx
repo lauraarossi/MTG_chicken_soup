@@ -7,6 +7,7 @@ import type { Deck } from "@/types";
 import DeckCard from "@/components/DeckCard";
 import { readDeckFile } from "@/lib/deck-io";
 import LoadingDots, { InlineLoadingDots } from "@/components/LoadingDots";
+import { detectColorsFromDecklist } from "@/lib/detect-colors";
 
 const FORMATS = [
   "commander","brawl","standard","pioneer","modern",
@@ -40,8 +41,11 @@ async function detectColors(decklist: string, commander: string, format: string)
     const m = line.trim().match(/^\d+x?\s+(.+)$/i);
     if (m && LAND_COLOR[m[1].trim().toLowerCase()]) found.add(LAND_COLOR[m[1].trim().toLowerCase()]);
   }
-  const colors = Array.from(found);
-  return colors.length > 0 ? colors.join(",") : undefined;
+  const landColors = Array.from(found);
+  if (landColors.length > 0) return landColors.join(",");
+  // Fall back to full card lookup for non-commander formats with no basic lands
+  const detected = await detectColorsFromDecklist(decklist);
+  return detected.length > 0 ? detected.join(",") : undefined;
 }
 
 export default function DecksPage() {
