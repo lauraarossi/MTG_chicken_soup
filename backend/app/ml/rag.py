@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import time
 import httpx
-from sqlalchemy import select, func
+from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.card_embedding import CardEmbedding
@@ -275,7 +275,7 @@ def _estimate_k(query: str) -> int:
 
 
 async def get_relevant_cards(query: str, db: AsyncSession, k: int | None = None) -> str | None:
-    """Return a formatted context string of the k most relevant cards via vector search."""
+    """Return a formatted context string of the k most relevant cards via hybrid (vector + FTS) search."""
     if k is None:
         k = _estimate_k(query)
     if k == 0:
@@ -284,20 +284,54 @@ async def get_relevant_cards(query: str, db: AsyncSession, k: int | None = None)
     if not count:
         return None
 
+    pool = k * 3  # each method fetches a wider pool; RRF trims to k
+
+    # --- Vector search ---
+    vector_names: list[str] = []
+    card_texts: dict[str, str] = {}
+
     query_vec = await _embed(query)
-    if query_vec is None:
+    if query_vec is not None:
+        rows = (await db.execute(
+            select(CardEmbedding)
+            .order_by(CardEmbedding.embedding.cosine_distance(query_vec))
+            .limit(pool)
+        )).scalars().all()
+        vector_names = [r.card_name for r in rows]
+        card_texts.update({r.card_name: r.card_text for r in rows})
+
+    # --- Full-text search ---
+    fts_names: list[str] = []
+    try:
+        fts_rows = (await db.execute(
+            text("""
+                SELECT card_name, card_text
+                FROM card_embeddings
+                WHERE search_vec @@ plainto_tsquery('english', :q)
+                ORDER BY ts_rank(search_vec, plainto_tsquery('english', :q)) DESC
+                LIMIT :lim
+            """),
+            {"q": query, "lim": pool},
+        )).fetchall()
+        fts_names = [r.card_name for r in fts_rows]
+        card_texts.update({r.card_name: r.card_text for r in fts_rows})
+    except Exception:
+        pass  # column not yet migrated or query parse error — degrade to vector-only
+
+    if not vector_names and not fts_names:
         return None
 
-    rows = (await db.execute(
-        select(CardEmbedding)
-        .order_by(CardEmbedding.embedding.cosine_distance(query_vec))
-        .limit(k)
-    )).scalars().all()
+    # --- Reciprocal Rank Fusion (k=60) ---
+    K_RRF = 60
+    scores: dict[str, float] = {}
+    for rank, name in enumerate(vector_names, 1):
+        scores[name] = scores.get(name, 0.0) + 1.0 / (K_RRF + rank)
+    for rank, name in enumerate(fts_names, 1):
+        scores[name] = scores.get(name, 0.0) + 1.0 / (K_RRF + rank)
 
-    if not rows:
-        return None
+    top_names = sorted(scores, key=lambda n: scores[n], reverse=True)[:k]
 
-    lines = ["**Related cards (semantic search):**"]
-    for row in rows:
-        lines.append(f"- {row.card_text}")
+    lines = ["**Related cards (hybrid search):**"]
+    for name in top_names:
+        lines.append(f"- {card_texts[name]}")
     return "\n".join(lines)

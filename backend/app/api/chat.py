@@ -13,6 +13,17 @@ from app.ml.inference import get_response, stream_response
 from app.ml.rag import get_relevant_cards, lookup_cards_in_query
 from app.security import get_current_user
 
+def _normalize_decklist(text: str) -> str:
+    """Ensure every // section header is preceded by a blank line."""
+    lines = text.strip().splitlines()
+    out: list[str] = []
+    for line in lines:
+        if line.strip().startswith("//") and out and out[-1].strip() != "":
+            out.append("")
+        out.append(line)
+    return "\n".join(out)
+
+
 router = APIRouter(prefix="/chat", tags=["chat"])
 logger = logging.getLogger(__name__)
 
@@ -184,5 +195,6 @@ async def extract_deck(
     history = [{"role": m.role, "content": m.content} for m in conversation.messages]
     history.append({"role": "user", "content": EXTRACT_PROMPT})
 
-    decklist = await get_response(EXTRACT_PROMPT, history)
-    return {"decklist": decklist.strip()}
+    raw = await get_response(EXTRACT_PROMPT, history)
+    decklist = _normalize_decklist(raw)
+    return {"decklist": decklist}
